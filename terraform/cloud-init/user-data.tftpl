@@ -1,0 +1,69 @@
+#cloud-config
+manage_etc_hosts: false
+hostname: ${hostname}
+fqdn: ${hostname}.${domain}
+
+users:
+  - name: root
+    lock_passwd: false
+    passwd: toor
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+  - name: ansible-user
+    gecos: Ansible User
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    lock_passwd: false
+    passwd: ansible
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+  - name: ubuntu
+    lock_passwd: false
+    passwd: 1
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+chpasswd:
+  list: |
+    root:toor
+    ansible-user:ansible
+    ubuntu:1
+  expire: False
+ssh_pwauth: False
+
+packages:
+  - openssh-server
+
+write_files:
+  - path: /etc/hosts
+    owner: root:root
+    permissions: '0644'
+    content: |
+      127.0.0.1 localhost
+      ${static_ip} ${hostname}.${domain} ${hostname}
+
+runcmd:
+  # Настройка русской локали
+  - locale-gen ru_RU.UTF-8
+  - update-locale LANG=ru_RU.UTF-8
+  # Отключение приветствия
+  - touch /root/.hushlogin
+  - su - ubuntu -c 'touch /home/ubuntu/.hushlogin'
+  - su - ansible-user -c 'touch /home/ansible-user/.hushlogin'
+  # Настройка DNS
+  - sed -i 's/#DNS=/DNS=${dns_server}/' /etc/systemd/resolved.conf
+  - sed -i 's/#Domains=/Domains=${domain} ${hostname}.${domain}/' /etc/systemd/resolved.conf
+  - systemctl restart systemd-resolved
+
+bootcmd:
+  # Отключаем IPv6
+  - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+  # Добавляем второй IP адрес
+  - ip addr add ${static_ip}/${mask} dev enp0s1 || true
