@@ -1,0 +1,38 @@
+---
+- name: Install Docker
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    ssh_user: "ansible-user"
+
+  roles:
+    - role: geerlingguy.docker
+      vars:
+        docker_users:
+          - "{{ ssh_user }}"
+        docker_package: "docker-ce=5:29.4.0-1~ubuntu.24.04~noble"
+        docker_install_compose: true
+        docker_compose_version: "v5.1.2"
+        docker_restart_handler_state: started
+        docker_restart_handler_enabled: true
+
+  tasks:
+    - name: Verify Docker installation
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      ansible.builtin.debug:
+        msg: "Docker installed: {{ docker_version.stdout }}"
+
+    - name: Verify Docker Compose installation
+      ansible.builtin.command: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: Display Docker Compose version
+      ansible.builtin.debug:
+        msg: "Docker Compose installed: {{ compose_version.stdout }}"
+...
