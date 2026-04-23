@@ -3,14 +3,12 @@
   hosts: all
   become: true
   gather_facts: true
-  vars:
-    ssh_user: "ansible-user"
 
   roles:
     - role: geerlingguy.docker
       vars:
         docker_users:
-          - "{{ ssh_user }}"
+          - "{{ ansible_user }}"
         docker_package: "docker-ce=5:29.4.0-1~ubuntu.24.04~noble"
         docker_install_compose: true
         docker_compose_version: "v5.1.2"

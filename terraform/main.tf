@@ -52,7 +52,7 @@ resource "multipass_instance" "nodes" {
       sed -i '' '/ ${each.key}.${local.common_config.domain}/d' /opt/homebrew/etc/dnsmasq.hosts
       # Добавляем новую: IP FQDN ShortName
       echo "${each.value.ip} ${each.key}.${local.common_config.domain} ${each.key}" >> /opt/homebrew/etc/dnsmasq.hosts
-      # Пречитка конфига dnsmasq без рестарта
+      # Перечитка конфига dnsmasq без рестарта
       sudo killall -HUP dnsmasq
     EOT
   }
