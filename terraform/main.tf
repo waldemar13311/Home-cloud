@@ -12,9 +12,10 @@ terraform {
 locals {
   # То, что меняется
   vms = {
-    "master" = { ip = "192.168.64.110", cpus = 2, memory = "4G", disk = "40G" }
-    "slave1" = { ip = "192.168.64.111", cpus = 2, memory = "4G", disk = "40G" }
-    "slave2" = { ip = "192.168.64.112", cpus = 2, memory = "4G", disk = "40G" }
+  //  "master" = { ip = "192.168.64.110", cpus = 2, memory = "4G", disk = "40G" }
+  //  "slave1" = { ip = "192.168.64.111", cpus = 2, memory = "4G", disk = "40G" }
+  //  "slave2" = { ip = "192.168.64.112", cpus = 2, memory = "4G", disk = "40G" }
+    "nginx"  = { ip = "192.168.64.113", cpus = 2, memory = "4G", disk = "40G" }
   }
 
   # Общие настройки

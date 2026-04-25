@@ -1,0 +1,20 @@
+- name: Ensure certificate directory is exist
+  ansible.builtin.file:
+    path: "/etc/ssl/internal/"
+    state: directory
+
+- name: Copy Certificate from local machine to remote host
+  ansible.builtin.copy:
+    src: "../../secrets/{{ hostvars[item]['ansible_host'] }}/server.crt"
+    dest: "/etc/ssl/internal/{{ hostvars[item]['ansible_host'] }}.crt"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy Private Key from local machine to remote host
+  ansible.builtin.copy:
+    src: "../../secrets/{{ hostvars[item]['ansible_host'] }}/server.key"
+    dest: "/etc/ssl/internal/{{ hostvars[item]['ansible_host'] }}.key"
+    owner: root
+    group: root
+    mode: '0600'

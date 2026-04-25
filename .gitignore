@@ -1,3 +1,5 @@
+.vscode/*
+
 terraform/.terraform
 terraform/.terraform.lock.hcl
 terraform/.terraform.tfstate.lock.info
@@ -9,3 +11,4 @@ ansible/sudo_password_file
 
 .venv/*
 
+secrets/*

@@ -1,0 +1,101 @@
+---
+- name: Init PKI Locally
+  hosts: localhost
+  connection: localhost
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: Ensure secrets directory exists
+      ansible.builtin.file:
+        path: "../../secrets"
+        state: directory
+        mode: "0700"
+
+    # Выпуск приватного ключа центра сертификации Root уровня (Root CA Private Key)
+    # Центр Сертификации (CA) = Секретный Ключ (Root CA Private Key) + Публичный Паспорт
+    # Только тот, у кого есть этот ключ, может ПОДПИСЫВАТЬ собою подлинность других сертификатов
+    - name: Create Root CA Private Key
+      community.crypto.openssl_privatekey:
+        path: "../../secrets/root_ca.key"
+        size: 4096
+        type: RSA
+      delegate_to: localhost
+
+    # Выпуск запроса на сертификат CSR (Certificate Signing Request)
+    - name: Create CSR for Root CA
+      community.crypto.openssl_csr:
+        path: "../../secrets/root_ca.csr"
+        privatekey_path: "../../secrets/root_ca.key"
+        common_name: "Home Lab Root CA"
+        organization_name: "My Home Domain"
+        basic_constraints:
+          - "CA:TRUE" # Указывает, может ли владелец этого сертификата подписывать другие сертификаты
+        # Флаг строгости.
+        # Говорит программе (браузеру, curl, openssl):
+        # Если ты не понимаешь, что такое basic_constraints, ты обязан отвергнуть этот сертификат
+        basic_constraints_critical: true
+        key_usage: # Перечисляем действия, которые разрешено совершать этим ключом
+          - keyCertSign # Разрешает использовать этот ключ для подписи других сертификатов
+          - cRLSign # Разрешает подписывать списки отзыва (CRL)
+          - digitalSignature # Базовое право на создание цифровых подписей
+        key_usage_critical: true
+
+    # Подписываем нашим приватным Root CA Private Key наш запроса на сертификат CSR
+    # и получаем публичный сертификат
+    - name: Create self-signed Root CA certificate from CSR
+      community.crypto.x509_certificate:
+        path: "../../secrets/root_ca.crt"
+        csr_path: "../../secrets/root_ca.csr"
+        privatekey_path: "../../secrets/root_ca.key"
+        provider: selfsigned
+        selfsigned_not_after: "+3650d"
+        mode: '0644'
+
+    - name: Ensure subdirectories for each hosts is exists
+      ansible.builtin.file:
+        path: "../../secrets/{{ hostvars[item]['ansible_host'] }}"
+        state: directory
+        mode: "0700"
+      loop: "{{ groups['all'] }}"
+      when:
+        - item != 'localhost'
+        - hostvars[item]['ansible_host'] is defined
+
+    - name: Issuing certificates and private keys
+      ansible.builtin.include_tasks: pki-init-service.ansible.yml
+      loop: "{{ groups['all'] }}"
+      loop_control:
+        loop_var: item
+      when:
+        - item != 'localhost'
+        - hostvars[item]['ansible_host'] is defined
+
+- name: Deploy Certificates to Remote Hosts
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Copy Root CA to trusted store
+      ansible.builtin.copy:
+        src: "../../secrets/root_ca.crt"
+        dest: "/usr/local/share/ca-certificates/root_ca.crt" # Обязательно расширение .crt
+        mode: '0644'
+
+    - name: Update CA trust store
+      ansible.builtin.command: update-ca-certificates
+      register: ca_result
+      changed_when: "'1 added' in ca_result.stdout"
+
+    - name: Ensure target directory exist
+      ansible.builtin.file:
+        path: "/etc/ssl"
+        state: directory
+        mode: "0755"
+
+    - name: Copy crt and key to {{ ansible_host }}
+      ansible.builtin.include_tasks: pki-copy-to-server.ansible.yml
+      loop: "{{ groups['all'] }}"
+      loop_control:
+        loop_var: item
