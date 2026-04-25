@@ -1,0 +1,4 @@
+---
+home_cloud_pki_ca_cert_days: "+3650d"
+home_cloud_pki_leaf_cert_days: "+1825d"
+home_cloud_pki_trusted_store_path: "/usr/local/share/ca-certificates/"

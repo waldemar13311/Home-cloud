@@ -1,0 +1,60 @@
+---
+- name: "Run local generation tasks"
+  become: false
+  delegate_to: localhost
+  run_once: true
+  block:
+    - name: Ensure secrets directory exists
+      ansible.builtin.file:
+        path: "{{ home_cloud_pki_local_secrets_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Issuance private keys, CSR and certificates for Root
+      ansible.builtin.include_tasks: issuance_for_root.ansible.yml
+
+    # С Root CA завершили, теперь выпуск под каждый хост
+    # Под каждый хост создаём свою папку, в которой будут храниться
+    # приватный ключ, запрос на сертификат и сертификат
+    - name: Ensure subdirectories for each hosts is exists
+      ansible.builtin.file:
+        path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host']] | path_join }}"
+        state: directory
+        mode: "0700"
+      loop: "{{ groups['all'] }}"
+      when:
+        - item != 'localhost'
+        - hostvars[item]['ansible_host'] is defined
+
+    # В цикле вызываем отдельный файл на выпуск всего, что нужно под каждый хост
+    - name: Issuance private keys, CSR and certificates for all hosts
+      ansible.builtin.include_tasks: issuance_for_leaf.ansible.yml
+      loop: "{{ groups['all'] }}"
+      loop_control:
+        loop_var: item
+      when:
+        - item != 'localhost'
+        - hostvars[item]['ansible_host'] is defined
+
+- name: "Run remote tasks"
+  become: true
+  block:
+    - name: Copy Root CA to trusted store
+      ansible.builtin.copy:
+        src: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.crt'] | path_join }}"
+        dest: "{{ [home_cloud_pki_trusted_store_path, 'root_ca.crt'] | path_join }}" # Обязательно расширение .crt
+        mode: '0644'
+
+    - name: Update CA trust store
+      ansible.builtin.command: update-ca-certificates
+      register: ca_result
+      changed_when: "'1 added' in ca_result.stdout"
+
+    - name: Ensure target directory exist
+      ansible.builtin.file:
+        path: "{{ home_cloud_pki_target_secrets_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy crt and key to remote servers
+      ansible.builtin.include_tasks: copy_to_server.ansible.yml

@@ -33,4 +33,3 @@
     - name: Display Docker Compose version
       ansible.builtin.debug:
         msg: "Docker Compose installed: {{ compose_version.stdout }}"
-...

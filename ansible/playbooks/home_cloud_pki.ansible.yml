@@ -1,0 +1,10 @@
+---
+- name: Init Home cloud PKI
+  hosts: all
+  gather_facts: true
+
+  roles:
+    - role: home_cloud_pki
+      vars:
+        home_cloud_pki_local_secrets_dir: "../../secrets"
+        home_cloud_pki_target_secrets_dir: "/etc/ssl/internal"

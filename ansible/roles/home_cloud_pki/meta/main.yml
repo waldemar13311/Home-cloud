@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  author: "waldemar13311"
+  description: "PKI Infrastructure for Home Cloud: Root CA generation and Leaf certificate deployment"
+  company: "Home Lab"
+
+  license: "MIT"
+
+  min_ansible_version: "2.10"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy  # 22.04
+        - noble  # 24.04
+
+  galaxy_tags:
+    - security
+    - pki
+    - ssl
+    - homecloud
+    - certificates
+
+dependencies: []

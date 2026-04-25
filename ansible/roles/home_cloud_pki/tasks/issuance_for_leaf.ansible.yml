@@ -1,0 +1,26 @@
+---
+# Выпускаем конечный приватный ключ для сервера
+- name: Create private key for {{ hostvars[item]['ansible_host'] }}
+  community.crypto.openssl_privatekey:
+    path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.key'] | path_join }}"
+    size: 2048
+
+# На основе приватного ключа выпускаем CSR
+- name: Create CSR for {{ hostvars[item]['ansible_host'] }}
+  community.crypto.openssl_csr:
+    path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.csr'] | path_join }}"
+    privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.key'] | path_join }}"
+    common_name: "{{ hostvars[item]['ansible_host'] }}"
+    subject_alt_name:
+      - "DNS:{{ hostvars[item]['ansible_host'] }}"
+      - "DNS:{{ item }}"
+
+# Подписываем приватным Root CA наш CSR и получаем сертификат для сервера
+- name: Sign certificate with Root CA {{ hostvars[item]['ansible_host'] }}
+  community.crypto.x509_certificate:
+    path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.crt'] | path_join }}"
+    csr_path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.csr'] | path_join }}"
+    ownca_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.crt'] | path_join }}"
+    ownca_privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
+    provider: ownca
+    ownca_not_after: "{{ home_cloud_pki_leaf_cert_days }}"

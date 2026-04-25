@@ -1,0 +1,40 @@
+---
+# Выпуск приватного ключа центра сертификации Root уровня (Root CA Private Key)
+# Центр Сертификации (CA) = Секретный Ключ (Root CA Private Key) + Публичный Паспорт
+# Только тот, у кого есть этот ключ, может ПОДПИСЫВАТЬ собою подлинность других сертификатов
+- name: Create Root CA private Key
+  community.crypto.openssl_privatekey:
+    path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
+    size: 4096
+    type: RSA
+  delegate_to: localhost
+
+# Выпуск запроса на сертификат CSR (Certificate Signing Request)
+- name: Create CSR for Root CA
+  community.crypto.openssl_csr:
+    path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.csr'] | path_join }}"
+    privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
+    common_name: "Home Lab Root CA"
+    organization_name: "My Home Domain"
+    basic_constraints:
+      - "CA:TRUE" # Указывает, может ли владелец этого сертификата подписывать другие сертификаты
+    # Флаг строгости.
+    # Говорит программе (браузеру, curl, openssl):
+    # Если ты не понимаешь, что такое basic_constraints, ты обязан отвергнуть этот сертификат
+    basic_constraints_critical: true
+    key_usage: # Перечисляем действия, которые разрешено совершать этим ключом
+      - keyCertSign # Разрешает использовать этот ключ для подписи других сертификатов
+      - cRLSign # Разрешает подписывать списки отзыва (CRL)
+      - digitalSignature # Базовое право на создание цифровых подписей
+    key_usage_critical: true
+
+# Подписываем нашим приватным Root CA Private Key наш запроса на сертификат CSR
+# и получаем публичный сертификат
+- name: Create self-signed Root CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.crt'] | path_join }}"
+    csr_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.csr'] | path_join }}"
+    privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
+    provider: selfsigned
+    selfsigned_not_after: "{{ home_cloud_pki_ca_cert_days }}"
+    mode: '0644'
