@@ -1,6 +1,7 @@
 ---
 - name: Init Home cloud PKI
   hosts: all
+  become: false
   gather_facts: true
 
   roles:

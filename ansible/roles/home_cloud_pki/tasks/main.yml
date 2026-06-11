@@ -1,10 +1,10 @@
 ---
 - name: "Run local generation tasks"
-  become: false
   delegate_to: localhost
   run_once: true
   block:
     - name: Ensure secrets directory exists
+      become: false
       ansible.builtin.file:
         path: "{{ home_cloud_pki_local_secrets_dir }}"
         state: directory
@@ -17,6 +17,7 @@
     # Под каждый хост создаём свою папку, в которой будут храниться
     # приватный ключ, запрос на сертификат и сертификат
     - name: Ensure subdirectories for each hosts is exists
+      become: false
       ansible.builtin.file:
         path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host']] | path_join }}"
         state: directory
@@ -37,20 +38,22 @@
         - hostvars[item]['ansible_host'] is defined
 
 - name: "Run remote tasks"
-  become: true
   block:
     - name: Copy Root CA to trusted store
+      become: true
       ansible.builtin.copy:
         src: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.crt'] | path_join }}"
         dest: "{{ [home_cloud_pki_trusted_store_path, 'root_ca.crt'] | path_join }}" # Обязательно расширение .crt
         mode: '0644'
 
     - name: Update CA trust store
+      become: true
       ansible.builtin.command: update-ca-certificates
       register: ca_result
       changed_when: "'1 added' in ca_result.stdout"
 
     - name: Ensure target directory exist
+      become: true
       ansible.builtin.file:
         path: "{{ home_cloud_pki_target_secrets_dir }}"
         state: directory

@@ -3,6 +3,7 @@
 # Центр Сертификации (CA) = Секретный Ключ (Root CA Private Key) + Публичный Паспорт
 # Только тот, у кого есть этот ключ, может ПОДПИСЫВАТЬ собою подлинность других сертификатов
 - name: Create Root CA private Key
+  become: false
   community.crypto.openssl_privatekey:
     path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
     size: 4096
@@ -11,6 +12,7 @@
 
 # Выпуск запроса на сертификат CSR (Certificate Signing Request)
 - name: Create CSR for Root CA
+  become: false
   community.crypto.openssl_csr:
     path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.csr'] | path_join }}"
     privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.key'] | path_join }}"
@@ -31,6 +33,7 @@
 # Подписываем нашим приватным Root CA Private Key наш запроса на сертификат CSR
 # и получаем публичный сертификат
 - name: Create self-signed Root CA certificate from CSR
+  become: false
   community.crypto.x509_certificate:
     path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.crt'] | path_join }}"
     csr_path: "{{ [home_cloud_pki_local_secrets_dir, 'root_ca.csr'] | path_join }}"

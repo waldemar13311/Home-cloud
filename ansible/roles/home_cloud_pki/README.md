@@ -61,3 +61,7 @@ secrets/
    ├── server.csr
    └── server.key
 ```
+
+## Лицензия
+
+This project is licensed under the **AGPL-3.0-or-later**.

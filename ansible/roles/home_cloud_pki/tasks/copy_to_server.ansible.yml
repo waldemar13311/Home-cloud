@@ -1,5 +1,6 @@
 ---
 - name: Copy Certificate from local machine to remote host
+  become: true
   ansible.builtin.copy:
     src: "{{ [home_cloud_pki_local_secrets_dir, ansible_host, 'server.crt'] | path_join }}"
     dest: "{{ [home_cloud_pki_target_secrets_dir, ansible_host ~ '.crt'] | path_join }}"
@@ -8,6 +9,7 @@
     mode: '0644'
 
 - name: Copy Private Key from local machine to remote host
+  become: true
   ansible.builtin.copy:
     src: "{{ [home_cloud_pki_local_secrets_dir, ansible_host, 'server.key'] | path_join }}"
     dest: "{{ [home_cloud_pki_target_secrets_dir, ansible_host ~ '.key'] | path_join }}"
