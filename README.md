@@ -26,27 +26,35 @@
 
 Для домашней лаборатории и учебных задач: быстро собрать стенд, отработать инфраструктурные практики и иметь воспроизводимое окружение.
 
-## Подготовка огружения
-
+## Подготовка окружения
 ```bash
-python3 -m venv .venv
+uv sync
 source .venv/bin/activate
-pip install -r requirements.txt
 
+cd ansible
 ansible-galaxy role install -r requirements.yml
 ansible-galaxy collection install -r requirements.yml
 ```
 
-## Multipass команды
+## Tofu команды
+```bash
+cd terraform
 
+tofu init
+tofu plan
+tofu apply -parallelism=1
+
+tofu destroy -parallelism=1
+```
+
+## Multipass команды
 ```bash
 multipass list
 multipass purge
 ```
 
-## Tofu команды
+## Secrets
 ```bash
-tofu destroy -parallelism=1
-tofu plan
-tofu apply -parallelism=1
+cd ansible
+ansible-playbook playbooks/home_cloud_pki.ansible.yml
 ```
