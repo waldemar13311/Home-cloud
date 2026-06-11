@@ -59,6 +59,48 @@ cd ansible
 ansible-playbook playbooks/home_cloud_pki.ansible.yml
 ```
 
+### .gitlab-ci.yml в GitLab проектах с использованием Home Cloud PKI
+Так как сертификаты на серверах подписаны Home Cloud PKI, в пайплайнах для контейнеров перед использованием необходимо обновить бандл сертификатов. Пример реализации для разных дистрибутивов:
+```yml
+stages:
+  - ubuntu_test
+  - alpine_test
+  - fedora_test
+
+test_ubuntu_job:
+  stage: ubuntu_test
+  image: ubuntu:noble
+  tags:
+    - docker
+  script:
+    - echo "Привет из контейнера Ubuntu!"
+    - apt-get update -qq && apt-get install -y curl dnsutils
+    - nslookup gitlab.home
+    - curl -I https://gitlab.home/users/sign_in
+
+test_alpine_job:
+  stage: alpine_test
+  image: alpine:latest
+  tags:
+    - docker
+  script:
+    - echo "Привет из контейнера Alpine!"
+    - apk add --no-cache -q curl bind-tools ca-certificates && update-ca-certificates
+    - nslookup gitlab.home
+    - curl -I https://gitlab.home/users/sign_in
+
+test_fedora_job:
+  stage: fedora_test
+  image: fedora:latest
+  tags:
+    - docker
+  script:
+    - echo "Привет из контейнера Fedora!"
+    - dnf install -y -q --nodocs curl bind-utils && update-ca-trust extract
+    - nslookup gitlab.home
+    - curl -I https://gitlab.home/users/sign_in
+```
+
 ## Лицензия
 
 This project is licensed under the **AGPL-3.0-or-later**.
