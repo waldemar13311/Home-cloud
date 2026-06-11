@@ -1,11 +1,12 @@
 ---
 - name: Install Docker
   hosts: all
-  become: true
+  become: false
   gather_facts: true
 
   roles:
     - role: geerlingguy.docker
+      become: true
       vars:
         docker_users:
           - "{{ ansible_user }}"
@@ -17,19 +18,23 @@
 
   tasks:
     - name: Verify Docker installation
+      become: false
       ansible.builtin.command: docker --version
       register: docker_version
       changed_when: false
 
     - name: Display Docker version
+      become: false
       ansible.builtin.debug:
         msg: "Docker installed: {{ docker_version.stdout }}"
 
     - name: Verify Docker Compose installation
+      become: false
       ansible.builtin.command: docker compose version
       register: compose_version
       changed_when: false
 
     - name: Display Docker Compose version
+      become: false
       ansible.builtin.debug:
         msg: "Docker Compose installed: {{ compose_version.stdout }}"
