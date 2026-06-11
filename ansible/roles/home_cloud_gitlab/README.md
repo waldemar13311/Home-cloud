@@ -14,7 +14,7 @@
 
 ## Лицензия
 
-This project is licensed under the **AGPL-3.0-or-later** License — подробности в файле LICENSE. Мы стоим на защите свободы и открытости исходного кода (Copyleft).
+This project is licensed under the **AGPL-3.0-or-later**.
 
 ## Требования
 

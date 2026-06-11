@@ -58,3 +58,7 @@ multipass purge
 cd ansible
 ansible-playbook playbooks/home_cloud_pki.ansible.yml
 ```
+
+## Лицензия
+
+This project is licensed under the **AGPL-3.0-or-later**.
