@@ -1,0 +1,61 @@
+---
+- name: Home cloud GitLab | GitLab install
+  ansible.builtin.include_tasks: gitlab_install.yml
+
+- name: Home cloud GitLab | Flush handlers to apply config changes immediately
+  ansible.builtin.meta: flush_handlers
+
+- name: Home cloud GitLab | Wait for GitLab API to become healthy
+  become: false
+  ansible.builtin.uri:
+    url: "{{ home_cloud_gitlab_external_url }}/users/sign_in"
+    status_code: 200
+    validate_certs: "{{ home_cloud_gitlab_https_enable }}"
+  register: _gitlab_health_check
+  until: _gitlab_health_check.status == 200
+  retries: 30
+  delay: 10
+
+- name: Home cloud GitLab | Set initial Root password
+  become: true
+  ansible.builtin.shell: |
+    gitlab-rails runner "
+    user = User.find_by_username('root')
+    if user.valid_password?('{{ home_cloud_gitlab_root_password }}')
+      print 'ALREADY_SET'
+    else
+      user.password = '{{ home_cloud_gitlab_root_password }}'
+      user.password_confirmation = '{{ home_cloud_gitlab_root_password }}'
+      user.save!
+      print 'PASSWORD_CHANGED'
+    end"
+  register: _root_password_result
+  no_log: true
+  changed_when: "'PASSWORD_CHANGED' in _root_password_result.stdout"
+
+- name: Home cloud GitLab | Setup Instance Runner Registration Token
+  ansible.builtin.include_tasks: setup_runner_registration_token.yml
+
+- name: Home cloud GitLab | GitLab Runner install
+  ansible.builtin.include_tasks: gitlab_runner_install.yml
+
+- name: Home cloud GitLab | Register runner within GitLab engine
+  ansible.builtin.include_tasks: gitlab_runner_registration.yml
+
+- name: Home cloud GitLab | Check internal services status
+  become: true
+  ansible.builtin.command:
+    cmd: "gitlab-ctl status"
+  register: gitlab_status
+  changed_when: false
+
+- name: Home cloud GitLab | Show success message
+  become: false
+  ansible.builtin.debug:
+    var: out
+  vars:
+    out:
+      status: "SUCCESS: GitLab Instance is UP and Running!"
+      url: "{{ home_cloud_gitlab_external_url }}"
+      services: "{{ gitlab_status.stdout_lines }}"
+  when: "'down:' not in gitlab_status.stdout"

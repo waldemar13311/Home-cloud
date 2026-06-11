@@ -1,0 +1,32 @@
+---
+### === Блок по регистрации runner-а ===
+- name: Home cloud GitLab | Verify if Runner is alive and authorized in GitLab
+  become: true
+  ansible.builtin.command:
+    cmd: "gitlab-runner verify"
+  register: _runner_verify
+  # Игнорируем ошибку (rc=1), если раннер не зарегистрирован, # чтобы плейбук не упал, а пошел дальше к шагу регистрации
+  failed_when: false
+  changed_when: false
+
+- name: Home cloud GitLab | Register Local GitLab Runner
+  become: true
+  ansible.builtin.command:
+    cmd: >
+      gitlab-runner register --non-interactive
+      --url "{{ home_cloud_gitlab_external_url }}"
+      --registration-token "{{ home_cloud_gitlab_runner_registration_token }}"
+      --executor "docker"
+      --docker-image "{{ home_cloud_gitlab_docker_runner_image }}"
+      --description "Home Cloud Shared Docker Runner"
+      --tag-list "docker"
+      --locked="false"
+      --docker-volumes "{{ home_cloud_gitlab_root_ca_crt_path }}:/usr/local/share/ca-certificates/root_ca.crt:ro"
+      --docker-volumes "{{ home_cloud_gitlab_root_ca_crt_path }}:/etc/pki/ca-trust/source/anchors/root_ca.crt:ro"
+  changed_when: true
+  # Регистрируем ТОЛЬКО если команда verify вернула ошибку (rc != 0)
+  # или если в выводе явно написано, что раннер не зарегистрирован
+  when: >
+    _runner_verify.rc != 0 or
+    'is alive' not in _runner_verify.stderr
+### === Конец блока по регистрации runner-а ===

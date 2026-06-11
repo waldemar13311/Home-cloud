@@ -1,0 +1,7 @@
+---
+home_cloud_gitlab_required_packages:
+  - curl
+  - gpg
+
+home_cloud_gitlab_official_gitlab_gpg_apt_key: "https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey"
+home_cloud_gitlab_official_gitlab_runner_gpg_apt_key: "https://packages.gitlab.com/gpgkey/gpg.key"

@@ -1,0 +1,14 @@
+---
+- name: Init Home cloud GitLab
+  hosts: gitlab
+  become: false
+  gather_facts: true
+
+  roles:
+    - role: home_cloud_gitlab
+      vars:
+        home_cloud_gitlab_https_enable: true
+        home_cloud_gitlab_external_url: "https://gitlab.home"
+        home_cloud_gitlab_tls_crt_path: "/etc/ssl/internal/gitlab.home.crt"
+        home_cloud_gitlab_tls_key_path: "/etc/ssl/internal/gitlab.home.key"
+        home_cloud_gitlab_root_password: "toor2026!"

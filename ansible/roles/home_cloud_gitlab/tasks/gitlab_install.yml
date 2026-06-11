@@ -1,0 +1,72 @@
+---
+### === Блок по установке GitLab ===
+- name: Home cloud GitLab | Install system prerequisites
+  become: true
+  ansible.builtin.apt:
+    name: "{{ home_cloud_gitlab_required_packages }}"
+    state: present
+
+- name: Home cloud GitLab | Create apt keyrings directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Home cloud GitLab | Download official GitLab GPG key
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ home_cloud_gitlab_official_gitlab_gpg_apt_key }}"
+    dest: /etc/apt/keyrings/gitlab-ce.asc
+    mode: '0644'
+
+- name: Home cloud GitLab | Add official APT repository
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/gitlab-ce.asc] https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: "gitlab_gitlab-ce"
+    update_cache: true
+
+- name: Home cloud GitLab | Create SSL configuration directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/gitlab/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Home cloud GitLab | Link existing internal certificate
+  become: true
+  ansible.builtin.file:
+    src: "{{ home_cloud_gitlab_tls_crt_path }}"
+    dest: "/etc/gitlab/ssl/{{ ansible_fqdn }}.crt"
+    state: link
+  when: home_cloud_gitlab_https_enable
+
+- name: Home cloud GitLab | Link existing internal key
+  become: true
+  ansible.builtin.file:
+    src: "{{ home_cloud_gitlab_tls_key_path }}"
+    dest: "/etc/gitlab/ssl/{{ ansible_fqdn }}.key"
+    state: link
+  when: home_cloud_gitlab_https_enable
+
+- name: Home cloud GitLab | Install GitLab CE Package
+  become: true
+  ansible.builtin.apt:
+    name: "gitlab-ce={{ home_cloud_gitlab_ce_version }}"
+    state: present
+
+- name: Home cloud GitLab | Configure gitlab.rb with HTTPS and Redirects
+  become: true
+  ansible.builtin.template:
+    src: "default_gitlab.rb.j2"
+    dest: "/etc/gitlab/gitlab.rb"
+    owner: root
+    group: root
+    mode: '0600'
+    validate: /opt/gitlab/embedded/bin/ruby -c %s # Проверит файл на ошибки синтаксиса Ruby перед сохранением
+  notify: GitLab Reconfigure
+### === Конец блока по установке GitLab ===

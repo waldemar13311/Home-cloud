@@ -1,0 +1,20 @@
+---
+# Сетевые настройки
+home_cloud_gitlab_https_enable: false
+home_cloud_gitlab_external_url: "http://gitlab.example.com"
+
+# Версии и образы
+home_cloud_gitlab_ce_version: "19.0.2-ce.0"
+home_cloud_gitlab_runner_version: "19.0.1-1"
+home_cloud_gitlab_docker_runner_image: "ubuntu:24.04"
+
+# Секреты
+home_cloud_gitlab_root_password: "SuperSecurePassword123"
+
+# Instance Runner Registration Token (Токен регистрации раннеров на уровне всего инстанса)
+home_cloud_gitlab_runner_registration_token: "glpat-HomeCloudAdminTokenGeneration"
+
+# Локальные пути к сертификатам на хосте
+home_cloud_gitlab_root_ca_crt_path: "/usr/local/share/ca-certificates/root_ca.crt"
+home_cloud_gitlab_tls_crt_path: "/etc/ssl/certs/gitlab.home.crt"
+home_cloud_gitlab_tls_key_path: "/etc/ssl/certs/gitlab.home.key"

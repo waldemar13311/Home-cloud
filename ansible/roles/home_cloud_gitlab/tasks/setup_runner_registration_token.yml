@@ -1,0 +1,16 @@
+---
+### === Блок кода по установке системного токена регистрации ===
+- name: Home cloud GitLab | Provision Instance Runner Registration Token
+  become: true
+  ansible.builtin.shell: |
+    gitlab-rails runner "
+    if Gitlab::CurrentSettings.runners_registration_token == '{{ home_cloud_gitlab_runner_registration_token }}'
+      print 'TOKEN_ALREADY_SET'
+    else
+      settings = ApplicationSetting.current || ApplicationSetting.create_from_defaults
+      settings.set_runners_registration_token('{{ home_cloud_gitlab_runner_registration_token }}')
+      settings.save!
+      print 'TOKEN_UPDATED'
+    end"
+  register: _token_rails_output
+  changed_when: "'TOKEN_UPDATED' in _token_rails_output.stdout"

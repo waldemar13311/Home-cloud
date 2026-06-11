@@ -1,0 +1,42 @@
+---
+### === Блок по установке GitLab Runner ===
+- name: Home cloud GitLab | Download official GitLab Runner GPG key
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ home_cloud_gitlab_official_gitlab_runner_gpg_apt_key }}"
+    dest: /etc/apt/keyrings/gitlab-runner.asc
+    mode: '0644'
+
+- name: Home cloud GitLab | Add official GitLab Runner APT repository
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/gitlab-runner.asc] https://packages.gitlab.com/runner/gitlab-runner/ubuntu/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: "runner_gitlab-runner"
+    update_cache: true
+
+- name: Home cloud GitLab | Install GitLab Runner Package
+  become: true
+  ansible.builtin.apt:
+    name: "gitlab-runner={{ home_cloud_gitlab_runner_version }}"
+    state: present
+
+- name: Home cloud GitLab | Check GitLab Runner version
+  become: true
+  ansible.builtin.command:
+    cmd: "gitlab-runner -v"
+  register: runner_install_result
+  changed_when: false
+
+- name: Home cloud GitLab | Show Runner installation success message
+  become: false
+  ansible.builtin.debug:
+    var: out
+  vars:
+    out:
+      package: "gitlab-runner"
+      status: "SUCCESS: GitLab Runner Package is Installed!"
+      status_message: "Ready for registration process."
+      version: "{{ runner_install_result.stdout_lines }}"
+  when: runner_install_result.rc == 0
+### === Конец блока по установке GitLab Runner ===

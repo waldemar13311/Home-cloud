@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  author: waldemar13311
+  description: "GitLab CE and GitLab Runner deployment for Home Cloud"
+  company: "Home Lab"
+
+  license: "AGPL-3.0-or-later"
+
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy  # 22.04
+        - noble  # 24.04
+
+  galaxy_tags:
+    - gitlab
+    - runner
+    - homecloud
+    - devops
+    - copyleft
+
+dependencies: []
