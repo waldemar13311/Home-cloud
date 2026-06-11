@@ -1896,12 +1896,12 @@ external_url "{{ home_cloud_gitlab_external_url }}"
 # nginx['enable'] = true
 # nginx['client_max_body_size'] = '0'
 
-{%- if home_cloud_gitlab_https_enable %}
+{% if home_cloud_gitlab_https_enable %}
 nginx['redirect_http_to_https'] = true
 nginx['redirect_http_to_https_port'] = 80
-{%- else %}
+{% else %}
 nginx['redirect_http_to_https'] = false
-{%- endif %}
+{% endif %}
 
 ##! Most root CA's are included by default
 # nginx['ssl_client_certificate'] = "/etc/gitlab/ssl/ca.crt"
