@@ -1,10 +1,12 @@
 all:
   hosts:
-    master:
-      ansible_host: master.home
+    gitlab:
+      ansible_host: gitlab.home
+    nginx:
+      ansible_host: nginx.home
+    # master:
+    #  ansible_host: master.home
     # slave1:
     #   ansible_host: slave1.home
     # slave2:
     #   ansible_host: slave2.home
-    nginx:
-      ansible_host: nginx.home
