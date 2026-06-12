@@ -45,7 +45,7 @@ write_files:
     permissions: '0644'
     content: |
       127.0.0.1 localhost
-      ${static_ip} ${hostname}.${domain} ${hostname}
+      127.0.1.1 ${hostname}.${domain} ${hostname}
 
 runcmd:
   # Настройка русской локали
@@ -55,15 +55,9 @@ runcmd:
   - touch /root/.hushlogin
   - su - ubuntu -c 'touch /home/ubuntu/.hushlogin'
   - su - ansible-user -c 'touch /home/ansible-user/.hushlogin'
-  # Настройка DNS
-  - sed -i 's/#DNS=/DNS=${dns_server}/' /etc/systemd/resolved.conf
-  - sed -i 's/#Domains=/Domains=${domain} ${hostname}.${domain}/' /etc/systemd/resolved.conf
-  - systemctl restart systemd-resolved
 
 bootcmd:
   # Отключаем IPv6
   - sysctl -w net.ipv6.conf.all.disable_ipv6=1
   - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
-  # Добавляем второй IP адрес
-  - ip addr add ${static_ip}/${mask} dev enp0s1 || true

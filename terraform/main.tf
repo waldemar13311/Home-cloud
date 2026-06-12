@@ -12,17 +12,17 @@ terraform {
 locals {
   # То, что меняется
   vms = {
-    "master" = { ip = "192.168.64.110", cpus = 2, memory = "4G", disk = "40G" }
-  //  "slave1" = { ip = "192.168.64.111", cpus = 2, memory = "4G", disk = "40G" }
-  //  "slave2" = { ip = "192.168.64.112", cpus = 2, memory = "4G", disk = "40G" }
-    "nginx"  = { ip = "192.168.64.113", cpus = 2, memory = "4G", disk = "40G" }
+    "gitlab" = { cpus = 4, memory = "8G", disk = "40G" }
+    "nginx"  = { cpus = 2, memory = "4G", disk = "25G" }
+
+  //  "master" = { cpus = 2, memory = "4G", disk = "40G" }
+  //  "slave1" = { cpus = 2, memory = "4G", disk = "40G" }
+  //  "slave2" = { cpus = 2, memory = "4G", disk = "40G" }
   }
 
   # Общие настройки
   common_config = {
     domain     = "home"
-    mask       = "24"
-    dns_server = "192.168.1.25"
   }
 }
 
@@ -41,18 +41,15 @@ resource "multipass_instance" "nodes" {
     ssh_key    = file("~/.ssh/id_ed25519.pub")
     hostname   = each.key
     domain     = local.common_config.domain
-    static_ip  = each.value.ip
-    mask       = local.common_config.mask
-    dns_server = local.common_config.dns_server
   })
 
   # Автоматическое добавление A записей в dnsmasq при создании
   provisioner "local-exec" {
     command = <<EOT
-      # Удаляем старую запись, если она есть (идемпотентность)
+      # Удаляем старую запись, если она есть
       sed -i '' '/ ${each.key}.${local.common_config.domain}/d' /opt/homebrew/etc/dnsmasq.hosts
       # Добавляем новую: IP FQDN ShortName
-      echo "${each.value.ip} ${each.key}.${local.common_config.domain} ${each.key}" >> /opt/homebrew/etc/dnsmasq.hosts
+      echo "${self.ipv4[0]} ${self.name}.${local.common_config.domain} ${self.name}" >> /opt/homebrew/etc/dnsmasq.hosts
       # Перечитка конфига dnsmasq без рестарта
       sudo killall -HUP dnsmasq
     EOT
@@ -62,7 +59,8 @@ resource "multipass_instance" "nodes" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
-      sed -i '' '/ ${self.name}/d' /opt/homebrew/etc/dnsmasq.hosts
+      # Удалит строку, где после пробела идет имя машины, точка и любой домен
+      sed -i '' '/ ${self.name}\./d' /opt/homebrew/etc/dnsmasq.hosts
       sudo killall -HUP dnsmasq
     EOT
   }
@@ -71,9 +69,8 @@ resource "multipass_instance" "nodes" {
 output "vm_details" {
   value = {
     for name, instance in multipass_instance.nodes : name => {
-      # Выбираем из списка только тот IP, который НЕ совпадает со статикой
-      dynamic_multipass_ip = [for ip in instance.ipv4 : ip if ip != local.vms[name].ip][0]
-      static_ip            = local.vms[name].ip
+      fqdn = "${name}.${local.common_config.domain}"
+      ip   = instance.ipv4[0]
     }
   }
 }
