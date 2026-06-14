@@ -1,0 +1,68 @@
+---
+# Для инициализации vault, после выполнения плейбука используйте команду:
+# vault operator init -key-shares 3 -key-threshold 2
+- name: Deploy Home cloud Vault
+  hosts: vault
+  become: false
+  gather_facts: true
+
+  roles:
+    - role: ansible-community.ansible-vault
+      become: true
+      vars:
+        vault_install_method: "binary"
+        vault_version: "1.15.4"
+
+        # Управление пользователями на целевой ОС
+        vault_manage_user: true
+        vault_manage_group: true
+        vault_group: "vault"
+
+        validate_certs_during_api_reachable_check: false
+
+        # Сервер качает архив сам напрямую с Яндекса, минуя Макбук
+        vault_install_remotely: true
+        vault_zip_url: "https://mirror.yandex.ru/mirrors/releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_arm64.zip"
+        vault_shasums: "vault_{{ vault_version }}_SHA256SUMS"
+        vault_checksum_file_url: "https://mirror.yandex.ru/mirrors/releases.hashicorp.com/vault/{{ vault_version }}/{{ vault_shasums }}"
+
+        # Настройки TLS (Сертификаты берутся из локальной папки на Маке и копируются на сервер)
+        vault_tls_copy_keys: true
+        vault_tls_files_remote_src: false
+        vault_tls_src_files: "../../secrets/vault.home"
+
+        vault_tls_disable: 0  # 0 = TLS ВКЛЮЧЕН
+        vault_tls_certs_path: "/etc/vault/tls"
+        vault_tls_private_path: "/etc/vault/tls"
+        # Имена файлов в папке vault.home
+        vault_tls_cert_file: "server.crt"
+        vault_tls_key_file: "server.key"
+        vault_tls_ca_file: "../root_ca.crt" # Относительный путь внутри папки secrets/
+
+        # # Сетевые настройки и Web UI
+        vault_address: "0.0.0.0"
+        vault_port: 8200
+        vault_api_address: "https://{{ ansible_fqdn }}:8200"
+        vault_ui: true # Включаем веб UI
+
+        # Простейший бэкенд для хранения (просто папка на диске этой ВМ)
+        vault_backend: "file"
+        vault_home: "/var/lib/vault"
+
+        # Запрещаем сброс мастер-ключей из оперативной памяти в SWAP на диск
+        vault_disable_swap: true
+
+        # Ограничиваем права доступа к бинарникам и конфигам
+        vault_harden_file_perms: true
+
+        # Чистые логи в journalctl (тег vault вместо sh)
+        vault_systemd_use_subshell: false
+
+  post_tasks:
+    - name: Add VAULT_ADDR to global /etc/environment
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/environment
+        state: present
+        regexp: '^VAULT_ADDR='
+        line: 'VAULT_ADDR="https://{{ ansible_fqdn }}:8200"'
