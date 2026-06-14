@@ -1,0 +1,66 @@
+---
+- name: Deploy Home cloud K3s
+  hosts: k3s-node
+  become: false
+  gather_facts: true
+
+  tasks:
+    - name: Download and install K3s core components
+      block:
+        - name: Download K3s installer script
+          become: false
+          ansible.builtin.get_url:
+            url: https://get.k3s.io
+            dest: /tmp/k3s_install.sh
+            mode: '0700'
+
+        - name: Run K3s installer script
+          become: true
+          ansible.builtin.command:
+            cmd: /tmp/k3s_install.sh
+            # Идемпотентность: запускаем скрипт только если кубера еще нет
+            creates: /usr/local/bin/k3s
+          environment:
+            # Делает kubeconfig доступным для чтения, чтобы не использовать sudo
+            K3S_KUBECONFIG_MODE: "644"
+          register: k3s_install
+
+        - name: Wait for K3s to initialize
+          become: true
+          ansible.builtin.wait_for:
+            path: /etc/rancher/k3s/k3s.yaml
+            state: present
+
+        - name: Check if local kubeconfig already exists
+          delegate_to: localhost
+          become: false
+          ansible.builtin.stat:
+            path: "~/.kube/{{ ansible_hostname }}.yaml"
+          register: local_kubeconfig # Проверяем, есть ли уже файл на Маке
+
+    - name: Fetch and configure local kubeconfig
+      # Выполняем блок, только если K3s обновился ИЛИ файла на Маке нет
+      when: k3s_install.changed or not local_kubeconfig.stat.exists
+      block:
+        - name: Fetch Kubeconfig to localhost
+          become: true
+          ansible.builtin.fetch:
+            src: /etc/rancher/k3s/k3s.yaml
+            dest: "~/.kube/{{ ansible_hostname }}.yaml"
+            flat: true
+
+        - name: Replace 127.0.0.1 with server base name in local kubeconfig
+          delegate_to: localhost
+          become: false
+          ansible.builtin.replace:
+            path: "~/.kube/{{ ansible_hostname }}.yaml"
+            regexp: '127\.0\.0\.1'
+            replace: "{{ ansible_hostname }}"
+
+        - name: Rename cluster and context from default to hostname
+          delegate_to: localhost
+          become: false
+          ansible.builtin.replace:
+            path: "~/.kube/{{ ansible_hostname }}.yaml"
+            regexp: 'default'
+            replace: "{{ ansible_hostname }}"

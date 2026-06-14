@@ -4,6 +4,8 @@ all:
       ansible_host: gitlab.home
     vault:
       ansible_host: vault.home
+    k3s-node:
+      ansible_host: k3s-node.home
     # nginx:
     #   ansible_host: nginx.home
     # master:
