@@ -55,6 +55,10 @@ runcmd:
   - touch /root/.hushlogin
   - su - ubuntu -c 'touch /home/ubuntu/.hushlogin'
   - su - ansible-user -c 'touch /home/ansible-user/.hushlogin'
+  # Настройки DNS
+  - sed -i 's/#DNS=/DNS=${dns_server}/' /etc/systemd/resolved.conf
+  - sed -i 's/#Domains=/Domains=${domain}/' /etc/systemd/resolved.conf
+  - systemctl restart systemd-resolved
 
 bootcmd:
   # Отключаем IPv6

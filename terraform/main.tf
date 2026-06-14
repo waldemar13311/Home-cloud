@@ -12,9 +12,10 @@ terraform {
 locals {
   # То, что меняется
   vms = {
-    "gitlab" = { cpus = 4, memory = "8G", disk = "40G" }
-    "nginx"  = { cpus = 2, memory = "4G", disk = "25G" }
+    "gitlab"  = { cpus = 4, memory = "10G", disk = "60G" }
+    "vault"   = { cpus = 1, memory = "1G", disk = "20G" }
 
+  //  "nginx"  = { cpus = 2, memory = "4G", disk = "25G" }
   //  "master" = { cpus = 2, memory = "4G", disk = "40G" }
   //  "slave1" = { cpus = 2, memory = "4G", disk = "40G" }
   //  "slave2" = { cpus = 2, memory = "4G", disk = "40G" }
@@ -23,6 +24,7 @@ locals {
   # Общие настройки
   common_config = {
     domain     = "home"
+    dns_server = "192.168.1.25"
   }
 }
 
@@ -41,6 +43,7 @@ resource "multipass_instance" "nodes" {
     ssh_key    = file("~/.ssh/id_ed25519.pub")
     hostname   = each.key
     domain     = local.common_config.domain
+    dns_server = local.common_config.dns_server
   })
 
   # Автоматическое добавление A записей в dnsmasq при создании
@@ -59,9 +62,24 @@ resource "multipass_instance" "nodes" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
+      # 1. Находим полный FQDN машины в файле до того, как удалить строку
+      # Ищет строку, где есть пробел, имя машины, точка и что угодно дальше, и берет второе слово (FQDN)
+      FQDN=$(awk -v name="${self.name}" '$0 ~ " " name "\\." {print $2}' /opt/homebrew/etc/dnsmasq.hosts)
+
+      # 2. Удаляем строку из dnsmasq
       # Удалит строку, где после пробела идет имя машины, точка и любой домен
       sed -i '' '/ ${self.name}\./d' /opt/homebrew/etc/dnsmasq.hosts
       sudo killall -HUP dnsmasq
+
+      # 3. Чистим SSH-ключи
+      # По короткому имени
+      ssh-keygen -R ${self.name}
+      
+      # По длинному имени (если awk его нашел)
+      [ -n "$FQDN" ] && ssh-keygen -R $FQDN
+      
+      # По IP-адресу
+      ssh-keygen -R ${self.ipv4[0]}
     EOT
   }
 }
