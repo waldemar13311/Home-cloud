@@ -1,5 +1,5 @@
 ---
-- name: Init Home cloud GitLab
+- name: Deploy Home cloud GitLab
   hosts: gitlab
   become: false
   gather_facts: true
