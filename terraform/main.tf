@@ -1,14 +1,3 @@
-terraform {
-  required_version = ">= 1.11.6"
-
-  required_providers {
-    multipass = {
-      source  = "todoroff/multipass"
-      version = "1.7.0"
-    }
-  }
-}
-
 locals {
   # То, что меняется
   vms = {
@@ -82,14 +71,5 @@ resource "multipass_instance" "nodes" {
       # По IP-адресу
       ssh-keygen -R ${self.ipv4[0]}
     EOT
-  }
-}
-
-output "vm_details" {
-  value = {
-    for name, instance in multipass_instance.nodes : name => {
-      fqdn = "${name}.${local.common_config.domain}"
-      ip   = instance.ipv4[0]
-    }
   }
 }
