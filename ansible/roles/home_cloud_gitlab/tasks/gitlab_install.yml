@@ -59,7 +59,7 @@
     name: "gitlab-ce={{ home_cloud_gitlab_ce_version }}"
     state: present
 
-- name: Home cloud GitLab | Configure gitlab.rb with HTTPS and Redirects
+- name: Home cloud GitLab | Configure gitlab.rb
   become: true
   ansible.builtin.template:
     src: "default_gitlab.rb.j2"

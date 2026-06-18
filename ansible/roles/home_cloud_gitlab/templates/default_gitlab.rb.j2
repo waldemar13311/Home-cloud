@@ -1087,6 +1087,12 @@ external_url "{{ home_cloud_gitlab_external_url }}"
 
 # registry_external_url 'https://registry.example.com'
 
+{% if home_cloud_gitlab_container_registry_enabled %}
+registry_external_url "{{ home_cloud_gitlab_registry_external_url }}"
+gitlab_rails['registry_enabled'] = true
+{% endif %}
+
+
 ### Settings used by GitLab application
 # gitlab_rails['registry_enabled'] = true
 # gitlab_rails['registry_host'] = "registry.gitlab.example.com"

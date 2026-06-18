@@ -8,6 +8,9 @@ home_cloud_gitlab_ce_version: "19.0.2-ce.0"
 home_cloud_gitlab_runner_version: "19.0.1-1"
 home_cloud_gitlab_docker_runner_image: "ubuntu:24.04"
 
+home_cloud_gitlab_container_registry_enabled: false
+home_cloud_gitlab_registry_external_url: "http://gitlab.example.com:5050"
+
 # Секреты
 home_cloud_gitlab_root_password: "SuperSecurePassword123"
 

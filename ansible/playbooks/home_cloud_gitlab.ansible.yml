@@ -12,3 +12,5 @@
         home_cloud_gitlab_tls_crt_path: "/etc/ssl/internal/gitlab.home.crt"
         home_cloud_gitlab_tls_key_path: "/etc/ssl/internal/gitlab.home.key"
         home_cloud_gitlab_root_password: "toor2026!"
+        home_cloud_gitlab_container_registry_enabled: true
+        home_cloud_gitlab_registry_external_url: "https://gitlab.home:5050"
