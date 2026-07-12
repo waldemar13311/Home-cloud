@@ -10,6 +10,7 @@
       vars:
         nginx_remove_default_vhost: true  # Удаляем дефолтный конфиг
         nginx_listen_ipv6: false          # ОТКЛЮЧАЕТ IPv6
+        nginx_access_log: "/var/log/nginx/access.log main"
 
         # Настройка виртуальных хостов
         nginx_vhosts:
