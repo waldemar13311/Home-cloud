@@ -39,7 +39,7 @@
 - name: Home cloud GitLab | GitLab Runner install
   ansible.builtin.include_tasks: gitlab_runner_install.yml
 
-- name: Home cloud GitLab | Register runner within GitLab engine
+- name: Home cloud GitLab | Register GitLab Runner within GitLab engine
   ansible.builtin.include_tasks: gitlab_runner_registration.yml
 
 - name: Home cloud GitLab | Check internal services status

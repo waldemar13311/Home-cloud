@@ -23,6 +23,7 @@
       --locked="false"
       --docker-volumes "{{ home_cloud_gitlab_root_ca_crt_path }}:/usr/local/share/ca-certificates/root_ca.crt:ro"
       --docker-volumes "{{ home_cloud_gitlab_root_ca_crt_path }}:/etc/pki/ca-trust/source/anchors/root_ca.crt:ro"
+      --docker-volumes "/var/run/docker.sock:/var/run/docker.sock"
   changed_when: true
   # Регистрируем ТОЛЬКО если команда verify вернула ошибку (rc != 0)
   # или если в выводе явно написано, что раннер не зарегистрирован

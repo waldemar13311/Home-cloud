@@ -6,8 +6,8 @@ all:
       ansible_host: vault.home
     k3s-node:
       ansible_host: k3s-node.home
-    # nginx:
-    #   ansible_host: nginx.home
+    nginx:
+      ansible_host: nginx.home
     # master:
     #  ansible_host: master.home
     # slave1:

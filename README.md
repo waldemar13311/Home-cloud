@@ -40,11 +40,13 @@ ansible-galaxy collection install -r requirements.yml
 ```bash
 cd terraform
 
-tofu init
-tofu plan
-tofu apply -parallelism=1
+tofu -chdir=vms init
+tofu -chdir=vms plan
+tofu -chdir=vms apply -parallelism=1
 
-tofu destroy -parallelism=1
+# На удаление какая-то из этих команд
+tofu -chdir=vms destroy -parallelism=1 -target='multipass_instance.nodes["k3s-node"]'
+tofu destroy -parallelism=1 -target=multipass_instance.nodes["k3s-node"]
 ```
 
 ## Multipass команды

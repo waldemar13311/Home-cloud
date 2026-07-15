@@ -1,0 +1,3 @@
+Можно сделать для gitlab так же автоматическое конфигурирование с podman (podman runner)
+- Добавить podman-runner (чтобы был buildah build)
+- Написать плейбук, который будет ставить argocd через ansible
