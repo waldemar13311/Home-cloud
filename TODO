@@ -1,3 +1,4 @@
 Можно сделать для gitlab так же автоматическое конфигурирование с podman (podman runner)
 - Добавить podman-runner (чтобы был buildah build)
 - Написать плейбук, который будет ставить argocd через ansible
+- Добавить автодополнение для клиента vault в плейбук playbooks/home_cloud_vault.ansible.yml для пользователей root и ansible-user
