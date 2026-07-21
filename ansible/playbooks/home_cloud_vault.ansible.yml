@@ -1,6 +1,10 @@
 ---
 # Для инициализации vault, после выполнения плейбука используйте команду:
 # vault operator init -key-shares 3 -key-threshold 2
+
+# Для распечатывания после инициализации
+# vault operator unseal
+
 - name: Deploy Home cloud Vault
   hosts: vault
   become: false
