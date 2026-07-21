@@ -4,6 +4,7 @@
 **/*.tfstate
 **/*.tfstate.*
 **/.terraform.tfstate.lock.info
+**/secrets.auto.tfvars
 crash.log
 crash.*.log
 
