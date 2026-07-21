@@ -1,24 +1,3 @@
-locals {
-  # То, что меняется
-  vms = {
-    "gitlab"    = { cpus = 4, memory = "14G", disk = "60G" }
-    "vault"     = { cpus = 1, memory = "1G",  disk = "20G" }
-    "k3s-node"  = { cpus = 4, memory = "6G",  disk = "40G" }
-    "nginx"     = { cpus = 2, memory = "4G", disk = "25G" }
-
-
-  //  "master" = { cpus = 2, memory = "4G", disk = "40G" }
-  //  "slave1" = { cpus = 2, memory = "4G", disk = "40G" }
-  //  "slave2" = { cpus = 2, memory = "4G", disk = "40G" }
-  }
-
-  # Общие настройки
-  common_config = {
-    domain     = "home"
-    dns_server = "192.168.1.25"
-  }
-}
-
 resource "multipass_instance" "nodes" {
   for_each = local.vms
 
@@ -37,15 +16,29 @@ resource "multipass_instance" "nodes" {
     dns_server = local.common_config.dns_server
   })
 
-  # Автоматическое добавление A записей в dnsmasq при создании
+  # Автоматическое добавление A записей в dnsmasq и хоста в Ansible inventory при создании
   provisioner "local-exec" {
     command = <<EOT
+      INVENTORY="${path.module}/../../ansible/inventory.yml"
+      LOCKDIR="/tmp/terraform-ansible-inventory.lock"
+
+      # --- dnsmasq ---
       # Удаляем старую запись, если она есть
       sed -i '' '/ ${each.key}.${local.common_config.domain}/d' /opt/homebrew/etc/dnsmasq.hosts
       # Добавляем новую: IP FQDN ShortName
       echo "${self.ipv4[0]} ${self.name}.${local.common_config.domain} ${self.name}" >> /opt/homebrew/etc/dnsmasq.hosts
       # Перечитка конфига dnsmasq без рестарта
       sudo killall -HUP dnsmasq
+
+      # --- ansible inventory ---
+      # Блокировка на случай параллельного for_each
+      while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
+      # Удаляем старую запись хоста (две строки), если есть
+      sed -i '' "/^    ${each.key}:\$/,/^      ansible_host:/d" "$INVENTORY"
+      # Добавляем хост в конец файла
+      printf '    %s:\n      ansible_host: %s.%s\n' \
+        "${each.key}" "${each.key}" "${local.common_config.domain}" >> "$INVENTORY"
+      rmdir "$LOCKDIR"
     EOT
   }
 
@@ -53,6 +46,9 @@ resource "multipass_instance" "nodes" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
+      INVENTORY="${path.module}/../../ansible/inventory.yml"
+      LOCKDIR="/tmp/terraform-ansible-inventory.lock"
+
       # 1. Находим полный FQDN машины в файле до того, как удалить строку
       # Ищет строку, где есть пробел, имя машины, точка и что угодно дальше, и берет второе слово (FQDN)
       FQDN=$(awk -v name="${self.name}" '$0 ~ " " name "\\." {print $2}' /opt/homebrew/etc/dnsmasq.hosts)
@@ -65,12 +61,17 @@ resource "multipass_instance" "nodes" {
       # 3. Чистим SSH-ключи
       # По короткому имени
       ssh-keygen -R ${self.name}
-      
+
       # По длинному имени (если awk его нашел)
       [ -n "$FQDN" ] && ssh-keygen -R $FQDN
-      
+
       # По IP-адресу
       ssh-keygen -R ${self.ipv4[0]}
+
+      # 4. Удаляем хост из Ansible inventory
+      while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
+      sed -i '' "/^    ${self.name}:\$/,/^      ansible_host:/d" "$INVENTORY"
+      rmdir "$LOCKDIR"
     EOT
   }
 }
