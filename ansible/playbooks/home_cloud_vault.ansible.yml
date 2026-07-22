@@ -70,3 +70,17 @@
         state: present
         regexp: '^VAULT_ADDR='
         line: 'VAULT_ADDR="https://{{ ansible_fqdn }}:8200"'
+
+    - name: Find vault binary path on target host
+      ansible.builtin.command: which vault
+      register: vault_path
+      changed_when: false
+
+    - name: Create vault bash completion file
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/bash_completion.d/vault
+        content: "complete -C {{ vault_path.stdout }} vault\n"
+        owner: root
+        group: root
+        mode: '0644'
