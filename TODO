@@ -1,4 +1,5 @@
 - Написать плейбук, который будет ставить argocd через ansible
 - Добавить автодополнение для клиента vault в плейбук playbooks/home_cloud_vault.ansible.yml для пользователей root и ansible-user
 - Добавить podman-runner, чтобы был buildah build (бэклог)
-- Написать плейбук на установку SonarQube
+- Написать плейбук на развёртывание artifactory (бэклог)
+- Написать плейбук на установку SonarQube (бэклог)
