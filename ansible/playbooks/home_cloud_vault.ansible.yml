@@ -33,7 +33,7 @@
         # Настройки TLS (Сертификаты берутся из локальной папки на Маке и копируются на сервер)
         vault_tls_copy_keys: true
         vault_tls_files_remote_src: false
-        vault_tls_src_files: "../../secrets/vault.home"
+        vault_tls_src_files: "../../secrets/{{ ansible_fqdn }}"
 
         vault_tls_disable: 0  # 0 = TLS ВКЛЮЧЕН
         vault_tls_certs_path: "/etc/vault/tls"
