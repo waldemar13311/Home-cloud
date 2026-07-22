@@ -18,6 +18,7 @@
       --registration-token "{{ home_cloud_gitlab_runner_registration_token }}"
       --executor "docker"
       --docker-image "{{ home_cloud_gitlab_docker_runner_image }}"
+      --docker-pull-policy "if-not-present"
       --description "Home Cloud Shared Docker Runner"
       --tag-list "docker"
       --locked="false"
