@@ -1,6 +1,6 @@
 ---
 - name: Install Docker
-  hosts: all
+  hosts: gitlab
   become: false
   gather_facts: true
 
