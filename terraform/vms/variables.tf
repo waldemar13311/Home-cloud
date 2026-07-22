@@ -3,7 +3,12 @@ locals {
   vms = {
     "gitlab"    = { cpus = 4, memory = "14G", disk = "60G" }
     "vault"     = { cpus = 1, memory = "1G",  disk = "20G" }
-    "k3s-node"  = { cpus = 4, memory = "6G",  disk = "40G" }
+    "k3s-node"  = {
+      cpus        = 4,
+      memory      = "6G",
+      disk        = "40G",
+      subdomains  = ["argocd"]
+    }
     "nginx"     = { cpus = 2, memory = "4G", disk = "25G" }
 
 

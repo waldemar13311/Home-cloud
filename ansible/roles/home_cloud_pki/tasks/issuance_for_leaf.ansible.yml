@@ -14,8 +14,10 @@
     privatekey_path: "{{ [home_cloud_pki_local_secrets_dir, hostvars[item]['ansible_host'], 'server.key'] | path_join }}"
     common_name: "{{ hostvars[item]['ansible_host'] }}"
     subject_alt_name:
-      - "DNS:{{ hostvars[item]['ansible_host'] }}"
       - "DNS:{{ item }}"
+      - "DNS:*.{{ item }}"
+      - "DNS:{{ hostvars[item]['ansible_host'] }}"
+      - "DNS:*.{{ hostvars[item]['ansible_host'] }}"
 
 # Подписываем приватным Root CA наш CSR и получаем сертификат для сервера
 - name: Sign certificate with Root CA {{ hostvars[item]['ansible_host'] }}
