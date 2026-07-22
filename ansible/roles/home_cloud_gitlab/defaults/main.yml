@@ -2,20 +2,29 @@
 # Сетевые настройки
 home_cloud_gitlab_https_enable: false
 home_cloud_gitlab_external_url: "http://gitlab.example.com"
+home_cloud_gitlab_time_zone: "UTC"
 
 # Версии и образы
 home_cloud_gitlab_ce_version: "19.0.2-ce.0"
-home_cloud_gitlab_runner_version: "19.0.1-1"
+home_cloud_gitlab_runner_version: "19.2.0-1"
 home_cloud_gitlab_docker_runner_image: "ubuntu:24.04"
 
 home_cloud_gitlab_container_registry_enabled: false
 home_cloud_gitlab_registry_external_url: "http://gitlab.example.com:5050"
 
+# Application settings - Allow new user accounts (default true)
+home_cloud_gitlab_signup_enabled: true
+
 # Секреты
 home_cloud_gitlab_root_password: "SuperSecurePassword123"
 
+# Root Personal Access Token (ровно 20 символов — требование GitLab set_token)
+home_cloud_gitlab_root_pat: "HomeCloudGitlabPatToken-tqdhOsUCqPGr7rW"
+home_cloud_gitlab_root_pat_name: "Home Cloud Root PAT token"
+home_cloud_gitlab_root_pat_expires_days: 365
+
 # Instance Runner Registration Token (Токен регистрации раннеров на уровне всего инстанса)
-home_cloud_gitlab_runner_registration_token: "glpat-HomeCloudAdminTokenGeneration"
+home_cloud_gitlab_runner_registration_token: "glpat-HomeCloudGitlabRunnerToken-aMmgjPt4bqH0hC7"
 
 # Локальные пути к сертификатам на хосте
 home_cloud_gitlab_root_ca_crt_path: "/usr/local/share/ca-certificates/root_ca.crt"

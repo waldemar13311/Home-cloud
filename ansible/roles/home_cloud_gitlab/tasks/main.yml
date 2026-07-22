@@ -33,6 +33,12 @@
   no_log: true
   changed_when: "'PASSWORD_CHANGED' in _root_password_result.stdout"
 
+- name: Home cloud GitLab | Setup custom application settings
+  ansible.builtin.include_tasks: setup_custom_settings.yml
+
+- name: Home cloud GitLab | Setup Root Personal Access Token
+  ansible.builtin.include_tasks: setup_root_pat.yml
+
 - name: Home cloud GitLab | Setup Instance Runner Registration Token
   ansible.builtin.include_tasks: setup_runner_registration_token.yml
 
@@ -57,5 +63,8 @@
     out:
       status: "SUCCESS: GitLab Instance is UP and Running!"
       url: "{{ home_cloud_gitlab_external_url }}"
+      admin_login: "root"
+      admin_password: "{{ home_cloud_gitlab_root_password }}"
+      root_pat: "{{ home_cloud_gitlab_root_pat }}"
       services: "{{ gitlab_status.stdout_lines }}"
   when: "'down:' not in gitlab_status.stdout"

@@ -1,0 +1,27 @@
+---
+### === Блок кода по выпуску Root Personal Access Token ===
+- name: Home cloud GitLab | Provision Root Personal Access Token
+  become: true
+  ansible.builtin.shell: |
+    gitlab-rails runner "
+    user = User.find_by_username('root')
+    raise 'Root user not found' unless user
+
+    existing = PersonalAccessToken.find_by_token('{{ home_cloud_gitlab_root_pat }}')
+    if existing&.active?
+      print 'TOKEN_ALREADY_SET'
+    else
+      user.personal_access_tokens.where(name: '{{ home_cloud_gitlab_root_pat_name }}', revoked: false).find_each(&:revoke!)
+      token = user.personal_access_tokens.create!(
+        scopes: Gitlab::Auth.all_available_scopes.map(&:to_s),
+        name: '{{ home_cloud_gitlab_root_pat_name }}',
+        expires_at: {{ home_cloud_gitlab_root_pat_expires_days }}.days.from_now
+      )
+      token.set_token('{{ home_cloud_gitlab_root_pat }}')
+      token.save!
+      print 'TOKEN_CREATED'
+    end"
+  register: _root_pat_rails_output
+  no_log: true
+  changed_when: "'TOKEN_CREATED' in _root_pat_rails_output.stdout"
+### === Конец блока по выпуску Root Personal Access Token ===

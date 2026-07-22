@@ -79,7 +79,7 @@ external_url "{{ home_cloud_gitlab_external_url }}"
 
 # gitlab_rails['gitlab_ssh_host'] = 'ssh.host_example.com'
 # gitlab_rails['gitlab_ssh_user'] = ''
-# gitlab_rails['time_zone'] = 'UTC'
+gitlab_rails['time_zone'] = '{{ home_cloud_gitlab_time_zone }}'
 
 ### Rails asset / CDN host
 ###! Defines a url for a host/cdn to use for the Rails assets
@@ -144,14 +144,14 @@ external_url "{{ home_cloud_gitlab_external_url }}"
 ###! `8`  for Light Green
 ###! `9`  for Red
 ###! `10` for Light Red
-# gitlab_rails['gitlab_default_theme'] = 2
+# gitlab_rails['gitlab_default_theme'] = 3
 
 ### Default Color Mode
 ### Available values:
 ##! `1`  for Light mode
 ##! `2`  for Dark mode
 ##! `3`  for Auto (follow system preferences)
-# gitlab_rails['gitlab_default_color_mode'] = 1
+gitlab_rails['gitlab_default_color_mode'] = 1
 
 ### Custom html header tags
 ###! See https://docs.gitlab.com/ee/administration/custom_html_header_tags.html for more
@@ -2462,6 +2462,11 @@ nginx['listen_addresses'] = ['*']
 ##! When the registry is automatically enabled using the same domain as `external_url`,
 ##! it listens on this port
 # registry_nginx['listen_port'] = 5050
+
+{% if home_cloud_gitlab_container_registry_enabled and home_cloud_gitlab_https_enable %}
+registry_nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ ansible_fqdn }}.crt"
+registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ ansible_fqdn }}.key"
+{% endif %}
 
 ################################################################################
 ## Prometheus

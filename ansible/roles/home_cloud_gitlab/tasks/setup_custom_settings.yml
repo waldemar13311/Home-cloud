@@ -1,0 +1,17 @@
+---
+### === Блок кастомных Application Settings ===
+# Отключаем регистрацию новых пользователей (Allow new user accounts - false)
+- name: Home cloud GitLab | Apply custom application settings
+  become: true
+  ansible.builtin.shell: |
+    gitlab-rails runner "
+    desired_signup_enabled = {{ home_cloud_gitlab_signup_enabled | bool | ternary('true', 'false') }}
+    if Gitlab::CurrentSettings.signup_enabled == desired_signup_enabled
+      print 'SETTINGS_ALREADY_SET'
+    else
+      ::Gitlab::CurrentSettings.update!(signup_enabled: desired_signup_enabled)
+      print 'SETTINGS_UPDATED'
+    end"
+  register: _custom_settings_rails_output
+  changed_when: "'SETTINGS_UPDATED' in _custom_settings_rails_output.stdout"
+### === Конец блока кастомных Application Settings ===
