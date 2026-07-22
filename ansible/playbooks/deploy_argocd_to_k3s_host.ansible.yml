@@ -1,0 +1,146 @@
+---
+- name: Deploy ArgoCD to K3s host
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+
+  vars:
+    kubeconfig_path: "~/.kube/k3s-node.yaml"
+    argocd_namespace: "argocd"
+    argocd_chart_version: "7.7.0"
+
+    host_name_fqdn: "k3s-node.home"
+    argo_ingress_fqdn: "argocd.{{ host_name_fqdn }}"
+
+    cert_path: "../../secrets/{{ host_name_fqdn }}/server.crt"
+    key_path: "../../secrets/{{ host_name_fqdn }}/server.key"
+    argocd_tls_secret_name: "argocd-server-tls"
+
+  tasks:
+    - name: Ensure argocd namespace exists
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        name: "{{ argocd_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Read TLS Certificate from host
+      ansible.builtin.slurp:
+        src: "{{ cert_path }}"
+      register: tls_cert
+
+    - name: Read TLS Private Key from host
+      ansible.builtin.slurp:
+        src: "{{ key_path }}"
+      register: tls_key
+
+    - name: Create TLS Secret in K3s for ArgoCD
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          type: kubernetes.io/tls
+          metadata:
+            name: "{{ argocd_tls_secret_name }}"
+            namespace: "{{ argocd_namespace }}"
+          data:
+            tls.crt: "{{ tls_cert.content }}"
+            tls.key: "{{ tls_key.content }}"
+
+    - name: Add ArgoCD Helm repository
+      kubernetes.core.helm_repository:
+        name: argo
+        repo_url: "https://argoproj.github.io/argo-helm"
+
+    - name: Check if argocd-secret already exists
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig_path }}"
+        kind: Secret
+        name: argocd-secret
+        namespace: "{{ argocd_namespace }}"
+      register: existing_argocd_secret
+
+    - name: Pre-create argocd-secret with a persistent server.secretkey if it doesn't exist
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: argocd-secret
+            namespace: "{{ argocd_namespace }}"
+            labels:
+              app.kubernetes.io/name: argocd-secret
+              app.kubernetes.io/part-of: argocd
+          data:
+            # Генерируем случайный ключ только при первом создании и кодируем в base64
+            server.secretkey: "{{ lookup('ansible.builtin.password', '/dev/null', length=32) | b64encode }}"
+      # Создаем только если секрета еще нет в кластере
+      when: existing_argocd_secret.resources | length == 0
+
+    - name: Deploy ArgoCD via Helm
+      kubernetes.core.helm:
+        kubeconfig: "{{ kubeconfig_path }}"
+        name: argocd
+        chart_ref: argo/argo-cd
+        release_namespace: "{{ argocd_namespace }}"
+        chart_version: "{{ argocd_chart_version }}"
+        state: present
+        create_namespace: false
+        force: true
+        values:
+          configs:
+            params:
+              server.insecure: "true"
+          server:
+            extraArgs:
+              - --insecure
+            service:
+              type: ClusterIP
+              servicePortHttp: 80
+            ingress:
+              enabled: true
+              ingressClassName: traefik
+              hostname: "{{ argo_ingress_fqdn }}"
+              annotations:
+                traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+                traefik.ingress.kubernetes.io/router.tls: "true"
+              tls:
+                - secretName: "{{ argocd_tls_secret_name }}"
+                  hosts:
+                    - "{{ argo_ingress_fqdn }}"
+
+    - name: Wait for ArgoCD UI to become available via Ingress
+      ansible.builtin.uri:
+        url: "https://{{ argo_ingress_fqdn }}"
+        validate_certs: false
+        status_code: 200
+      register: _result
+      until: _result.status == 200
+      retries: 30
+      delay: 10
+
+    - name: Get ArgoCD initial admin password
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig_path }}"
+        kind: Secret
+        name: argocd-initial-admin-secret
+        namespace: "{{ argocd_namespace }}"
+      register: argocd_secret
+
+    - name: Print ArgoCD Access Details
+      ansible.builtin.debug:
+        msg:
+          - "=========================================================="
+          - "🚀 ArgoCD successfully deployed!"
+          - "=========================================================="
+          - "URL:      https://{{ argo_ingress_fqdn }}"
+          - "Username: admin"
+          - "Password: {{ argocd_secret.resources[0].data.password | b64decode }}"
+          - "=========================================================="
