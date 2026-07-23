@@ -1,3 +1,4 @@
 - Добавить podman-runner, чтобы был buildah build (бэклог)
 - Написать плейбук на развёртывание artifactory (бэклог)
 - Написать плейбук на установку SonarQube (бэклог)
+- Для home_cloud_3proxy добавить socks и посмотреть трафик в wireshart
