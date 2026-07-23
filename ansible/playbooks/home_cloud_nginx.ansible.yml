@@ -1,5 +1,5 @@
 ---
-- name: Deploy nginx
+- name: Deploy Home cloud Nginx
   hosts: nginx
   become: false
   gather_facts: true
