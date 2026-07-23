@@ -59,6 +59,9 @@ runcmd:
   - sed -i 's/#DNS=/DNS=${dns_server}/' /etc/systemd/resolved.conf
   - sed -i 's/#Domains=/Domains=${domain}/' /etc/systemd/resolved.conf
   - systemctl restart systemd-resolved
+  # Отключаем ipv6 для ssh сервера
+  - sed -i 's/^#\?[[:space:]]*AddressFamily.*/AddressFamily inet/' /etc/ssh/sshd_config
+  - systemctl restart ssh
 
 bootcmd:
   # Отключаем IPv6
