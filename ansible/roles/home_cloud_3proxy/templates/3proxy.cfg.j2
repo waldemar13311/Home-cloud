@@ -24,6 +24,3 @@ allow {{ home_cloud_3proxy_user }}
 
 # Запуск прокси на порту (в зависимости от режима это будет http или https прокси)
 proxy -p{{ home_cloud_3proxy_port }}
-
-# Сбрасываем правила после запуска сервиса (best practice в 3proxy)
-flush
