@@ -12,10 +12,6 @@
 * Безопасно настраивает детерминированный системный **Instance Runner Registration Token** через `gitlab-rails`.
 * Автоматически регистрирует локальный Docker-раннер с пробросом корневых сертификатов (Root CA) для работы по HTTPS.
 
-## Лицензия
-
-This project is licensed under the **AGPL-3.0-or-later**.
-
 ## Требования
 
 * **Минимальная версия Ansible:** `2.15`
@@ -57,3 +53,7 @@ This project is licensed under the **AGPL-3.0-or-later**.
       vars:
         home_cloud_gitlab_external_url: "http://gitlab.my-home.local"
         home_cloud_gitlab_runner_registration_token: "my-super-secure-token-xyz"
+```
+
+## Лицензия
+This project is licensed under the **AGPL-3.0-or-later**.
