@@ -1,0 +1,51 @@
+---
+- name: Home cloud 3proxy | Validate architecture support
+  ansible.builtin.assert:
+    that:
+      - ansible_architecture in home_cloud_3proxy_arch_map
+    fail_msg: "Архитектура '{{ ansible_architecture }}' не поддерживается ролью! Допустимые: {{ home_cloud_3proxy_arch_map.keys() | list }}"
+
+- name: Home cloud 3proxy | Ensure log directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ home_cloud_3proxy_log_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Home cloud 3proxy | Verify SSL certificate and key exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ home_cloud_3proxy_ssl_cert }}"
+    - "{{ home_cloud_3proxy_ssl_key }}"
+  loop_control:
+    label: "{{ item }}"
+  register: ssl_check
+  failed_when: not ssl_check.stat.exists
+  when: home_cloud_3proxy_type == 'https'
+
+- name: Home cloud 3proxy | Install .deb package from download url
+  become: true
+  ansible.builtin.apt:
+    deb: "{{ home_cloud_3proxy_download_url }}"
+  register: deb_install
+
+- name: Home cloud 3proxy | Deploy 3proxy configuration
+  become: true
+  ansible.builtin.template:
+    src: 3proxy.cfg.j2
+    dest: "{{ home_cloud_3proxy_config_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+  notify: Restart 3proxy
+
+- name: Home cloud 3proxy | Ensure 3proxy is enabled and started
+  become: true
+  ansible.builtin.systemd:
+    name: 3proxy
+    enabled: true
+    state: started

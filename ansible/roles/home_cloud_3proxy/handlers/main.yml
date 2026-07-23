@@ -1,0 +1,7 @@
+---
+- name: Restart 3proxy
+  become: true
+  ansible.builtin.systemd:
+    name: 3proxy
+    state: restarted
+    daemon_reload: true

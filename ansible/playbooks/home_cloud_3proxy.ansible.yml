@@ -1,0 +1,26 @@
+---
+- name: Deploy Home cloud 3proxy
+  hosts: proxy
+  become: false
+  gather_facts: true
+
+  roles:
+    - role: home_cloud_3proxy
+      vars:
+        # Базовые переменные
+        home_cloud_3proxy_log_file: "/var/log/3proxy/3proxy.log"
+        home_cloud_3proxy_config_path: "/etc/3proxy/3proxy.cfg"
+
+        # Для настройки http-прокси
+        # home_cloud_3proxy_type: "http"
+        # home_cloud_3proxy_user: "http_user"
+        # home_cloud_3proxy_password: "http_password"
+        # home_cloud_3proxy_port: "3128"
+        
+        # Для настройки https-прокси
+        home_cloud_3proxy_type: "https"
+        home_cloud_3proxy_ssl_cert: "/etc/ssl/internal/{{ ansible_host }}.crt"
+        home_cloud_3proxy_ssl_key: "/etc/ssl/internal/{{ ansible_host }}.key"
+        home_cloud_3proxy_user: "https_user"
+        home_cloud_3proxy_password: "https_password123"
+        home_cloud_3proxy_port: "3129"

@@ -1,0 +1,12 @@
+---
+# Маппинг архитектур на суффиксы в именах файлов .deb от 3proxy
+home_cloud_3proxy_arch_map:
+  x86_64: "x86_64"
+  aarch64: "arm64"
+  armv7l: "arm"
+
+# Собираем URL из коротких логических частей
+home_cloud_3proxy_base_url: "https://github.com/3proxy/3proxy/releases/download"
+home_cloud_3proxy_arch: "{{ home_cloud_3proxy_arch_map[ansible_architecture] }}"
+home_cloud_3proxy_filename: "3proxy-{{ home_cloud_3proxy_version }}.{{ home_cloud_3proxy_arch }}.deb"
+home_cloud_3proxy_download_url: "{{ home_cloud_3proxy_base_url }}/{{ home_cloud_3proxy_version }}/{{ home_cloud_3proxy_filename }}"

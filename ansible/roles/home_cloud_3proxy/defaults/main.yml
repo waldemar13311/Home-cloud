@@ -1,0 +1,16 @@
+---
+# Версия, которую используем
+home_cloud_3proxy_version: "0.9.7"
+
+home_cloud_3proxy_user: "myuser"
+home_cloud_3proxy_password: "mypassword123"
+home_cloud_3proxy_port: "3129"
+
+# Тип прокси: http или https
+home_cloud_3proxy_type: "https"
+
+# Пути к сертификатам (используются, если type: https)
+home_cloud_3proxy_ssl_cert: "/etc/ssl/server.crt"
+home_cloud_3proxy_ssl_key: "/etc/ssl/server.key"
+
+home_cloud_3proxy_log_file: "/var/log/3proxy/3proxy.log"

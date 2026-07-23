@@ -1,0 +1,29 @@
+# Запускать как демон (в фоне) и использовать системные DNS
+# включает внутреннее кэширование DNS-запросов
+nscache 65536
+
+timeouts 1 5 30 60 180 1800 15 60
+
+# Включаем логирование в файл с указанием формата
+log {{ home_cloud_3proxy_log_file }} D
+logformat "- +_L%Y-%m-%d %H:%M:%S.%. %N.%p %E %U %C:%c %R:%r %O %I %h %T"
+
+{% if home_cloud_3proxy_type == 'https' %}
+# Настройки SSL/TLS для HTTPS-прокси
+ssl_server_cert {{ home_cloud_3proxy_ssl_cert }}
+ssl_server_key {{ home_cloud_3proxy_ssl_key }}
+ssl_serv
+{% endif %}
+
+# Авторизация по логину/паролю
+auth strong
+users {{ home_cloud_3proxy_user }}:CL:{{ home_cloud_3proxy_password }}
+
+# Ограничение прав: разрешаем только нашему пользователю
+allow {{ home_cloud_3proxy_user }}
+
+# Запуск прокси на порту (в зависимости от режима это будет http или https прокси)
+proxy -p{{ home_cloud_3proxy_port }}
+
+# Сбрасываем правила после запуска сервиса (best practice в 3proxy)
+flush
