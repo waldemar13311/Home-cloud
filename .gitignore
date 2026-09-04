@@ -15,5 +15,3 @@ ansible/sudo_password_file
 .venv/*
 
 secrets/*
-
-uv.lock
