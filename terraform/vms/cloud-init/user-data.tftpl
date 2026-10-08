@@ -6,7 +6,6 @@ fqdn: ${hostname}.${domain}
 users:
   - name: root
     lock_passwd: false
-    passwd: toor
     shell: /bin/bash
     ssh_authorized_keys:
       - ${ssh_key}
@@ -16,24 +15,25 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: sudo
     lock_passwd: false
-    passwd: ansible
     shell: /bin/bash
     ssh_authorized_keys:
       - ${ssh_key}
 
   - name: ubuntu
     lock_passwd: false
-    passwd: 1
     shell: /bin/bash
     ssh_authorized_keys:
       - ${ssh_key}
 
+# Задаём пароль для пользователей
 chpasswd:
   list: |
     root:toor
     ansible-user:ansible
     ubuntu:1
   expire: False
+
+# Пароль работает только через консоль гипервизора (multipass shell), не по SSH
 ssh_pwauth: False
 
 packages:
