@@ -102,6 +102,6 @@ test_fedora_job:
     - curl -I https://gitlab.home/users/sign_in
 ```
 
-## Лицензия
+## License
 
-This project is licensed under the **AGPL-3.0-or-later**.
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
