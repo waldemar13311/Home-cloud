@@ -27,18 +27,26 @@ resource "multipass_instance" "nodes" {
       SUBDOMAINS="%{ for sub in lookup(each.value, "subdomains", []) }${sub}.${each.key}.${local.common_config.domain} %{ endfor }"
 
       # --- dnsmasq ---
-      sed -i '' "/ ${each.key}.${local.common_config.domain}/d" /opt/homebrew/etc/dnsmasq.hosts
-      
+      # Флаг -i.bak универсален: понимается и BSD sed (macOS), и GNU sed (Linux).
+      # Вариант -i '' из BSD на Linux сломается, а -i без суффикса — на macOS.
+      # Бэкап создаётся на обеих платформах, поэтому сразу удаляем его.
+      sed -i.bak "/ ${each.key}\.${local.common_config.domain}/d" /opt/homebrew/etc/dnsmasq.hosts
+      /bin/rm -f /opt/homebrew/etc/dnsmasq.hosts.bak
+      # Внимание: путь /opt/homebrew/etc и dnsmasq как сервис — мак-специфичные вещи,
+      # на Linux-хосте хосты и reload dnsmasq настраиваются иначе.
+
       # Добавляем в файл: IP, FQDN, ShortName и дальше все субдомены в эту же строку
       echo "${self.ipv4[0]} ${self.name}.${local.common_config.domain} ${self.name} $SUBDOMAINS" >> /opt/homebrew/etc/dnsmasq.hosts
       sudo killall -HUP dnsmasq
 
       # --- ansible inventory ---
       while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
-      
+
       # УМНОЕ УДАЛЕНИЕ: Удаляем блок текущего хоста (4 пробела) и все его вложенные свойства (6+ пробелов)
-      sed -i '' -e "/^    ${each.key}:/,/^    [a-zA-Z]/ { /^    ${each.key}:/d; /^      /d; }" "$INVENTORY"
-      
+      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
+      sed -i.bak -e "/^    ${each.key}:/,/^    [a-zA-Z]/ { /^    ${each.key}:/d; /^      /d; }" "$INVENTORY"
+      /bin/rm -f "$INVENTORY.bak"
+
       # Записываем базовые данные хоста
       printf '    %s:\n      ansible_host: %s.%s\n' \
         "${each.key}" "${each.key}" "${local.common_config.domain}" >> "$INVENTORY"
@@ -66,7 +74,9 @@ resource "multipass_instance" "nodes" {
       FQDN=$(awk -v name="${self.name}" '$0 ~ " " name "\\." {print $2}' /opt/homebrew/etc/dnsmasq.hosts)
 
       # 2. Удаляем строку целиком (субдомены удалятся вместе с ней, так как они на одной строке)
-      sed -i '' "/ ${self.name}\./d" /opt/homebrew/etc/dnsmasq.hosts
+      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
+      sed -i.bak "/ ${self.name}\./d" /opt/homebrew/etc/dnsmasq.hosts
+      /bin/rm -f /opt/homebrew/etc/dnsmasq.hosts.bak
       sudo killall -HUP dnsmasq
 
       # 3. Чистим SSH-ключи (добавил 2>/dev/null, чтобы скрипт не падал, если ключа нет)
@@ -76,10 +86,12 @@ resource "multipass_instance" "nodes" {
 
       # 4. Удаляем хост и его дочерние элементы из Ansible inventory
       while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
-      
+
       # То же умное удаление: убираем хост при destroy
-      sed -i '' -e "/^    ${self.name}:/,/^    [a-zA-Z]/ { /^    ${self.name}:/d; /^      /d; }" "$INVENTORY"
-      
+      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
+      sed -i.bak -e "/^    ${self.name}:/,/^    [a-zA-Z]/ { /^    ${self.name}:/d; /^      /d; }" "$INVENTORY"
+      /bin/rm -f "$INVENTORY.bak"
+
       rmdir "$LOCKDIR"
     EOT
   }
