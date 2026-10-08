@@ -44,7 +44,7 @@ tofu -chdir=multipass init
 tofu -chdir=multipass plan
 tofu -chdir=multipass apply -parallelism=1
 
-# На удаление какая-то из этих команд
+# На удаление
 tofu -chdir=multipass destroy -parallelism=1 -target='multipass_instance.nodes["k3s-node"]'
 ```
 
