@@ -16,6 +16,16 @@ resource "multipass_instance" "nodes" {
     dns_server = local.common_config.dns_server
   })
 
+  # Имя ВМ станет частью FQDN и попадёт в regex в provisioner-скриптах,
+  # поэтому оно обязано быть корректной DNS-меткой: иначе dnsmasq/inventory
+  # сломаются молча, уже после применения плана.
+  lifecycle {
+    precondition {
+      condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", each.key))
+      error_message = "Имя ВМ '${each.key}' должно быть корректной DNS-меткой: строчные буквы, цифры, дефисы; начинаться и заканчиваться буквой или цифрой."
+    }
+  }
+
   # Автоматическое добавление записей при создании
   provisioner "local-exec" {
     command = <<EOT
