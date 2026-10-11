@@ -5,6 +5,6 @@ provider "registry.opentofu.org/todoroff/multipass" {
   version     = "1.7.0"
   constraints = "1.7.0"
   hashes = [
-    "h1:HwpRFJACOeBXpFfNjUHgAJIvFNepz/NvrjgCOs/YcLU=",
+    "h1:Xp8N4lyTag3jKtEy25jMWZOGKit3Jp76Qzk3ENNVQIY=",
   ]
 }
