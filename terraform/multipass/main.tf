@@ -70,7 +70,21 @@ resource "terraform_data" "dnsmasq_reload" {
   triggers_replace = [local_file.dnsmasq_hosts.content_sha1]
 
   provisioner "local-exec" {
-    command = "sudo killall -HUP dnsmasq"
+    # fail, а не continue по умолчанию: иначе при неудаче релоада apply
+    # пройдёт зелёным, а dnsmasq продолжит отдавать устаревшие записи
+    command    = <<EOT
+      if sudo killall -HUP dnsmasq; then
+        echo "dnsmasq успешно перечитал hosts-файл, DNS-записи обновлены"
+      else
+        echo "Не удалось перечитать конфиг dnsmasq (killall -HUP). Частые причины:" >&2
+        echo "  1. dnsmasq не запущен:       brew services list | grep dnsmasq" >&2
+        echo "  2. sudo запрашивает пароль:  нужен passwordless sudo для этого пользователя" >&2
+        echo "DNS-записи обновлены на диске, но dnsmasq продолжит отдавать старые," >&2
+        echo "пока не выполните 'sudo killall -HUP dnsmasq' вручную." >&2
+        exit 1
+      fi
+    EOT
+    on_failure = fail
   }
 }
 
