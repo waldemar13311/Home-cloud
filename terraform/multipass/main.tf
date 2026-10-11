@@ -40,8 +40,13 @@ resource "terraform_data" "ssh_known_hosts_cleanup" {
   }
 
   provisioner "local-exec" {
-    when    = destroy
-    command = join(" ; ", [for h in split("::", each.key) : "ssh-keygen -R ${h} 2>/dev/null || true"])
+    when = destroy
+    # Не глотаем ошибки: видно, какая запись удалилась, а какая нет.
+    # Провал одной записи не роняет весь destroy (|| echo), но виден в выводе.
+    command = join("\n", [
+      for h in split("::", each.key) :
+      "echo \"known_hosts: убираю ${h}\"; ssh-keygen -R ${h} || echo \"ПРЕДУПРЕЖДЕНИЕ: не удалось убрать ${h} из known_hosts\" >&2"
+    ])
   }
 }
 
