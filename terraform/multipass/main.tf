@@ -32,11 +32,10 @@ resource "multipass_instance" "nodes" {
 }
 
 # Очистка known_hosts от имён, FQDN и IP уничтожаемых ВМ.
-# При пересоздании ВМ с новым IP старая запись чистится автоматически
 resource "terraform_data" "ssh_known_hosts_cleanup" {
   for_each = {
     for name, inst in multipass_instance.nodes :
-    name => "${name}::${name}.${local.common_config.domain}::${inst.ipv4[0]}"
+    "${name}::${name}.${local.common_config.domain}::${inst.ipv4[0]}" => name
   }
 
   provisioner "local-exec" {
