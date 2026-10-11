@@ -1,3 +1,11 @@
+variable "ssh_public_key_path" {
+  description = "Путь к публичному SSH-ключу, который добавляется на все ВМ"
+  type        = string
+  # Раскрытие ~ делается через pathexpand() в main.tf,
+  # потому что в default переменной функции вызывать нельзя.
+  default = "~/.ssh/id_ed25519.pub"
+}
+
 locals {
   # То, что меняется
   vms = {

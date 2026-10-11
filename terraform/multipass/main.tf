@@ -10,7 +10,7 @@ resource "multipass_instance" "nodes" {
 
   cloud_init = templatefile("${path.module}/cloud-init/user-data.tftpl", {
     # ssh ключ добавится на все ВМ
-    ssh_key    = file("~/.ssh/id_ed25519.pub")
+    ssh_key    = file(pathexpand(var.ssh_public_key_path))
     hostname   = each.key
     domain     = local.common_config.domain
     dns_server = local.common_config.dns_server
