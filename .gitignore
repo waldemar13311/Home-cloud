@@ -8,6 +8,7 @@
 **/*_override.tf
 **/.terraform.tfstate.lock.info
 **/secrets.auto.tfvars
+**/inventory.auto.yml
 crash.log
 crash.*.log
 

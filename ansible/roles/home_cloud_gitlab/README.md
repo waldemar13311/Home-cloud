@@ -37,11 +37,11 @@
 ## Структура задач роли (Tasks Structure)
 
 Роль выполняет шаги в строгой и прозрачной последовательности:
-1. `gitlab_install.yml` — Добавление официального репозитория и установка пакета GitLab CE нужной версии.
-2. `gitlab_configure.yml` — Применение шаблона конфигурации и запуск `gitlab-ctl reconfigure`.
-3. `setup_gitlab_registration_token.yml` — Безопасная инициализация системного токена регистрации через `gitlab-rails runner`.
-4. `gitlab_runner_install.yml` — Установка зафиксированной версии `gitlab-runner`.
-5. `gitlab_runner_registration.yml` — Проверка состояния и автоматическая регистрация Docker-раннера.
+1. `gitlab_install.yml` - Добавление официального репозитория и установка пакета GitLab CE нужной версии.
+2. `gitlab_configure.yml` - Применение шаблона конфигурации и запуск `gitlab-ctl reconfigure`.
+3. `setup_gitlab_registration_token.yml` - Безопасная инициализация системного токена регистрации через `gitlab-rails runner`.
+4. `gitlab_runner_install.yml` - Установка зафиксированной версии `gitlab-runner`.
+5. `gitlab_runner_registration.yml` - Проверка состояния и автоматическая регистрация Docker-раннера.
 
 ## Пример использования (Playbook Example)
 

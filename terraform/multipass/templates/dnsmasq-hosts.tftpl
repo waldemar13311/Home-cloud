@@ -1,0 +1,6 @@
+# Файл генерируется Terraform: terraform/multipass/main.tf (local_file.dnsmasq_hosts).
+# Ручные правки будут перезаписаны при следующем apply.
+# Подключён в /opt/homebrew/etc/dnsmasq.conf через addn-hosts.
+%{ for name, vm in vms ~}
+${vm.ip} ${name}.${domain} ${name}%{ for sub in vm.subdomains } ${sub}.${name}.${domain}%{ endfor }
+%{ endfor ~}

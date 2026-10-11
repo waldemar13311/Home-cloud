@@ -11,9 +11,9 @@
 
 ## Из чего состоит
 
-- `terraform/` — создание и удаление виртуальных машин;
-- `ansible/playbooks/` — прикладная настройка хостов и сервисов;
-- `ansible/roles/home_cloud_pki/` — роль для выпуска и доставки внутренних сертификатов.
+- `terraform/` - создание и удаление виртуальных машин;
+- `ansible/playbooks/` - прикладная настройка хостов и сервисов;
+- `ansible/roles/home_cloud_pki/` - роль для выпуска и доставки внутренних сертификатов.
 
 ## Типовой сценарий использования
 
@@ -59,6 +59,18 @@ unzip terraform-provider-gitlab_19.2.0_darwin_arm64.zip -d ~/.terraform.d/plugin
 rm terraform-provider-gitlab_19.2.0_darwin_arm64.zip
 
 
+# Настройка hashicorp/local
+# В архиве бинарник без версии в имени, а filesystem mirror требует имя с версией,
+# поэтому после unzip его нужно переименовать.
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/
+
+wget https://github.com/opentofu/terraform-provider-local/releases/download/v2.9.1/terraform-provider-local_2.9.1_darwin_arm64.zip && \
+unzip terraform-provider-local_2.9.1_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64 && \
+mv ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/terraform-provider-local \
+   ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/terraform-provider-local_v2.9.1 && \
+rm terraform-provider-local_2.9.1_darwin_arm64.zip
+
+
 # Настройка opentofu/null
 mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/opentofu/null/3.3.0/darwin_arm64/
 
@@ -73,9 +85,14 @@ cd terraform
 
 tofu -chdir=multipass init
 tofu -chdir=multipass plan
-tofu -chdir=multipass apply -parallelism=1
+# -parallelism=1 больше не нужен (нужно проверить !): общих файлов (dnsmasq.hosts,
+# ansible-инвентарь), за которые могли бы гоняться инстансы, нет -
+# они генерируются Terraform целиком после создания всех ВМ
+tofu -chdir=multipass apply
 
 # На удаление
+# -parallelism=1 для destroy можно оставить: при параллельном удалении
+# нескольких ВМ provisioner-ы known_hosts могли бы гоняться за ~/.ssh/known_hosts
 tofu -chdir=multipass destroy -parallelism=1 -target='multipass_instance.nodes["k3s-node"]'
 ```
 

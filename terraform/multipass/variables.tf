@@ -21,13 +21,13 @@ locals {
     #   disk        = "60G"
     #   subdomains  = ["registry"]
     # }
-    
+
     # "vault"     = {
     #   cpus        = 1,
     #   memory      = "1G",
     #   disk        = "20G"
     # }
-    
+
     # "k3s-node"  = {
     #   cpus        = 4,
     #   memory      = "6G",
