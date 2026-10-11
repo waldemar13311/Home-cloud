@@ -80,20 +80,20 @@ rm terraform-provider-null_3.3.0_darwin_arm64.zip
 ```
 
 ## Tofu команды
+### Создание ВМ
+Редактируем `terraform/multipass/variables.tf`.
+
+Затем:
 ```bash
 cd terraform
 
 tofu -chdir=multipass init
 tofu -chdir=multipass plan
-# -parallelism=1 больше не нужен (нужно проверить !): общих файлов (dnsmasq.hosts,
-# ansible-инвентарь), за которые могли бы гоняться инстансы, нет -
-# они генерируются Terraform целиком после создания всех ВМ
 tofu -chdir=multipass apply
 
-# На удаление
-# -parallelism=1 для destroy можно оставить: при параллельном удалении
-# нескольких ВМ provisioner-ы known_hosts могли бы гоняться за ~/.ssh/known_hosts
-tofu -chdir=multipass destroy -parallelism=1 -target='multipass_instance.nodes["k3s-node"]'
+# Удаление ВМ: убрать её из local.vms в terraform/multipass/variables.tf
+# и выполнить обычный apply. dnsmasq.hosts, inventory.auto.yml и
+# known_hosts при этом приведутся в порядок автоматически.
 ```
 
 ## Multipass команды
