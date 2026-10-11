@@ -33,9 +33,14 @@ resource "multipass_instance" "nodes" {
 
 # Очистка known_hosts от имён, FQDN и IP уничтожаемых ВМ.
 resource "terraform_data" "ssh_known_hosts_cleanup" {
-  for_each = {
-    for name, inst in multipass_instance.nodes :
-    "${name}::${name}.${local.common_config.domain}::${inst.ipv4[0]}" => name
+  for_each = multipass_instance.nodes
+
+  triggers_replace = [each.value.ipv4[0]]
+
+  input = {
+    name = each.key
+    fqdn = "${each.key}.${local.common_config.domain}"
+    ip   = each.value.ipv4[0]
   }
 
   provisioner "local-exec" {
@@ -43,7 +48,7 @@ resource "terraform_data" "ssh_known_hosts_cleanup" {
     # Не глотаем ошибки: видно, какая запись удалилась, а какая нет.
     # Провал одной записи не роняет весь destroy (|| echo), но виден в выводе.
     command = join("\n", [
-      for h in split("::", each.key) :
+      for h in [self.output.name, self.output.fqdn, self.output.ip] :
       "echo \"known_hosts: убираю ${h}\"; ssh-keygen -R ${h} || echo \"ПРЕДУПРЕЖДЕНИЕ: не удалось убрать ${h} из known_hosts\" >&2"
     ])
   }
