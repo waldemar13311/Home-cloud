@@ -49,19 +49,7 @@ write_files:
       127.0.0.1 localhost
       127.0.1.1 ${hostname}.${domain} ${hostname}
 
-  # Отключение IPv6: применяется systemd-sysctl на каждой загрузке,
-  # раньше, чем bootcmd. `lo` тоже отключаем: ::1 не нужен.
-  - path: /etc/sysctl.d/99-disable-ipv6.conf
-    owner: root:root
-    permissions: '0644'
-    content: |
-      net.ipv6.conf.all.disable_ipv6 = 1
-      net.ipv6.conf.default.disable_ipv6 = 1
-      net.ipv6.conf.lo.disable_ipv6 = 1
-
 runcmd:
-  # Применяем sysctl-настройки сразу, не дожидаясь перезагрузки
-  - sysctl --system
   # Настройка русской локали
   - locale-gen ru_RU.UTF-8
   - update-locale LANG=ru_RU.UTF-8
@@ -89,3 +77,15 @@ runcmd:
   # Отключаем ufw
   - systemctl stop ufw.service || true
   - systemctl disable ufw.service || true
+
+# Отключение IPv6 именно в bootcmd, а не в runcmd или /etc/sysctl.d:
+# bootcmd выполняется на каждой загрузке ПОСЛЕ подъёма интерфейсов
+# (networkd уже поднял их), поэтому запись в all.disable_ipv6
+# распространяется на живые интерфейсы и снимает с них v6-адреса.
+# systemd-sysctl из /etc/sysctl.d выполняется раньше сети и на NIC
+# не действует (проверено: интерфейс поднимался с fe80:: и ULA).
+# `lo` тоже отключаем: ::1 не нужен.
+bootcmd:
+  - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
