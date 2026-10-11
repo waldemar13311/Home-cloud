@@ -32,10 +32,7 @@ resource "multipass_instance" "nodes" {
 }
 
 # Очистка known_hosts от имён, FQDN и IP уничтожаемых ВМ.
-# Destroy-provisioner'у разрешено ссылаться только на self и each.key
-# (никаких var/local), поэтому FQDN и IP зашиты в ключ for_each:
-# при пересоздании ВМ с новым IP старая запись чистится автоматически
-# (старый элемент мапы уничтожается со старым ключом).
+# При пересоздании ВМ с новым IP старая запись чистится автоматически
 resource "terraform_data" "ssh_known_hosts_cleanup" {
   for_each = {
     for name, inst in multipass_instance.nodes :
@@ -49,11 +46,8 @@ resource "terraform_data" "ssh_known_hosts_cleanup" {
 }
 
 # dnsmasq.hosts генерируется целиком на каждом изменении состояния.
-# Файл посвящён этому проекту (подключён в dnsmasq.conf через addn-hosts),
-# поэтому Terraform - его единственный владелец: никаких sed-патчей и
-# гонок за файл, -parallelism=1 больше не нужен.
-# Внимание: путь /opt/homebrew/etc и dnsmasq как сервис - мак-специфичные
-# вещи, на Linux-хосте хосты и reload dnsmasq настраиваются иначе.
+# Внимание: путь /opt/homebrew/etc и dnsmasq как сервис - мак-специфичные.
+# На Linux-хосте хосты и reload dnsmasq настраиваются иначе.
 resource "local_file" "dnsmasq_hosts" {
   filename        = "/opt/homebrew/etc/dnsmasq.hosts"
   file_permission = "0644"
@@ -80,9 +74,8 @@ resource "terraform_data" "dnsmasq_reload" {
   }
 }
 
-# Ansible-инвентарь генерируется целиком на каждом изменении состояния,
-# а не патчится sed-ом из provisioner'ов: нет гонок, локов и -parallelism=1,
-# а ansible.cfg читает его вместе со статическим ansible/inventory.yml
+# Ansible-инвентарь генерируется целиком на каждом изменении состояния.
+# ansible.cfg читает его вместе со статическим ansible/inventory.yml
 # (см. inventory = ... в ansible/ansible.cfg).
 resource "local_file" "inventory" {
   filename        = "${path.module}/../../ansible/inventory.auto.yml"

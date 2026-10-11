@@ -8,6 +8,9 @@ variable "ssh_public_key_path" {
 locals {
   # То, что меняется
   vms = {
+    # "test-vm-1"           = { cpus = 2, memory = "4G", disk = "25G" }
+    # "test-vm-2"           = { cpus = 2, memory = "4G", disk = "25G" }
+
     # Для тестов VPN
     # "proxy"           = { cpus = 2, memory = "4G", disk = "25G" }
     # "proxy-worker-1"  = { cpus = 2, memory = "4G", disk = "25G" }
