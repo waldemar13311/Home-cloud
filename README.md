@@ -34,6 +34,37 @@ source .venv/bin/activate
 cd ansible
 ansible-galaxy role install -r requirements.yml
 ansible-galaxy collection install -r requirements.yml
+
+# Настройка todoroff/multipass
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/todoroff/multipass/1.7.0/darwin_arm64/
+
+wget https://github.com/todoroff/terraform-provider-multipass/releases/download/1.7.0/terraform-provider-multipass_1.7.0_darwin_arm64.zip && \
+unzip terraform-provider-multipass_1.7.0_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/todoroff/multipass/1.7.0/darwin_arm64 && \
+rm terraform-provider-multipass_1.7.0_darwin_arm64.zip
+
+
+# Настройка opentofu/vault
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/opentofu/vault/5.10.1/darwin_arm64/
+
+wget https://github.com/opentofu/terraform-provider-vault/releases/download/v5.10.1/terraform-provider-vault_5.10.1_darwin_arm64.zip && \
+unzip terraform-provider-vault_5.10.1_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/opentofu/vault/5.10.1/darwin_arm64 && \
+rm terraform-provider-vault_5.10.1_darwin_arm64.zip
+
+
+# Настройка gitlabhq/gitlab
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/gitlabhq/gitlab/19.2.0/darwin_arm64/
+
+wget https://github.com/gitlabhq/terraform-provider-gitlab/releases/download/v19.2.0/terraform-provider-gitlab_19.2.0_darwin_arm64.zip && \
+unzip terraform-provider-gitlab_19.2.0_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/gitlabhq/gitlab/19.2.0/darwin_arm64 && \
+rm terraform-provider-gitlab_19.2.0_darwin_arm64.zip
+
+
+# Настройка opentofu/null
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/opentofu/null/3.3.0/darwin_arm64/
+
+wget https://github.com/opentofu/terraform-provider-null/releases/download/v3.3.0/terraform-provider-null_3.3.0_darwin_arm64.zip && \
+unzip terraform-provider-null_3.3.0_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/opentofu/null/3.3.0/darwin_arm64 && \
+rm terraform-provider-null_3.3.0_darwin_arm64.zip
 ```
 
 ## Tofu команды
