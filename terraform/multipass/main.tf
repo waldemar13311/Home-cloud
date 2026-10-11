@@ -45,12 +45,22 @@ resource "terraform_data" "ssh_known_hosts_cleanup" {
 
   provisioner "local-exec" {
     when = destroy
-    # Не глотаем ошибки: видно, какая запись удалилась, а какая нет.
+    # Выводим ошибки: видно, какая запись удалилась, а какая нет.
     # Провал одной записи не роняет весь destroy (|| echo), но виден в выводе.
-    command = join("\n", [
+    #
+    # Лок обязателен: ssh-keygen -R переписывает known_hosts ЦЕЛИКОМ
+    # (через known_hosts.old), поэтому параллельные вызовы из разных
+    # элементов ресурса теряют удаления друг друга - наблюдали вживую
+    # как "link known_hosts to known_hosts.old: File exists".
+    command = join("\n", concat([
+      "LOCK=\"$HOME/.ssh/.tofu-known-hosts.lock\"",
+      "i=0",
+      "while ! mkdir \"$LOCK\" 2>/dev/null; do sleep 0.2; i=$((i+1)); if [ $i -gt 50 ]; then echo 'known_hosts: не дождались лока' >&2; exit 1; fi; done",
+      "trap 'rmdir \"$LOCK\" 2>/dev/null' EXIT",
+      ], [
       for h in [self.output.name, self.output.fqdn, self.output.ip] :
       "echo \"known_hosts: убираю ${h}\"; ssh-keygen -R ${h} || echo \"ПРЕДУПРЕЖДЕНИЕ: не удалось убрать ${h} из known_hosts\" >&2"
-    ])
+    ]))
   }
 }
 
