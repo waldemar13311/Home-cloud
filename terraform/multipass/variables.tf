@@ -45,6 +45,7 @@ locals {
 
   # Общие настройки
   common_config = {
+    image      = "24.04"
     domain     = "home"
     dns_server = "192.168.1.25"
   }

@@ -2,7 +2,7 @@ resource "multipass_instance" "nodes" {
   for_each = local.vms
 
   name  = each.key
-  image = "24.04"
+  image = local.common_config.image
 
   cpus   = each.value.cpus
   memory = each.value.memory
