@@ -63,8 +63,18 @@ runcmd:
   - systemctl restart systemd-resolved
   # Отключаем ipv6 для ssh сервера
   - sed -i 's/^#\?[[:space:]]*AddressFamily.*/AddressFamily inet/' /etc/ssh/sshd_config
-  - systemctl restart ssh
-  # Отключаем ufw (|| true - без этого если в каком-то образе ufw не установлен, stop вернёт ошибку)
+
+  # Обновляем конфигурацию systemd и перезапускаем ssh с ожиданием готовности
+  # systemctl daemon-reload гарантирует, что systemd обновил список сервисов после установки openssh-server
+  # systemctl restart ssh && break - гарантирует выход при успешном завершении systemctl restart ssh
+  - systemctl daemon-reload
+  - |
+    for i in {1..15}; do 
+      systemctl restart ssh && break
+      sleep 2
+    done
+
+  # Отключаем ufw
   - systemctl stop ufw.service || true
   - systemctl disable ufw.service || true
 
