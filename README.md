@@ -11,9 +11,9 @@
 
 ## Из чего состоит
 
-- `terraform/` — создание и удаление виртуальных машин;
-- `ansible/playbooks/` — прикладная настройка хостов и сервисов;
-- `ansible/roles/home_cloud_pki/` — роль для выпуска и доставки внутренних сертификатов.
+- `terraform/` - создание и удаление виртуальных машин;
+- `ansible/playbooks/` - прикладная настройка хостов и сервисов;
+- `ansible/roles/home_cloud_pki/` - роль для выпуска и доставки внутренних сертификатов.
 
 ## Типовой сценарий использования
 
@@ -59,6 +59,18 @@ unzip terraform-provider-gitlab_19.2.0_darwin_arm64.zip -d ~/.terraform.d/plugin
 rm terraform-provider-gitlab_19.2.0_darwin_arm64.zip
 
 
+# Настройка hashicorp/local
+# В архиве бинарник без версии в имени, а filesystem mirror требует имя с версией,
+# поэтому после unzip его нужно переименовать.
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/
+
+wget https://github.com/opentofu/terraform-provider-local/releases/download/v2.9.1/terraform-provider-local_2.9.1_darwin_arm64.zip && \
+unzip terraform-provider-local_2.9.1_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64 && \
+mv ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/terraform-provider-local \
+   ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm64/terraform-provider-local_v2.9.1 && \
+rm terraform-provider-local_2.9.1_darwin_arm64.zip
+
+
 # Настройка opentofu/null
 mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/opentofu/null/3.3.0/darwin_arm64/
 
@@ -68,15 +80,20 @@ rm terraform-provider-null_3.3.0_darwin_arm64.zip
 ```
 
 ## Tofu команды
+### Создание ВМ
+Редактируем `terraform/multipass/variables.tf`.
+
+Затем:
 ```bash
 cd terraform
 
 tofu -chdir=multipass init
 tofu -chdir=multipass plan
-tofu -chdir=multipass apply -parallelism=1
+tofu -chdir=multipass apply
 
-# На удаление
-tofu -chdir=multipass destroy -parallelism=1 -target='multipass_instance.nodes["k3s-node"]'
+# Удаление ВМ: убрать её из local.vms в terraform/multipass/variables.tf
+# и выполнить обычный apply. dnsmasq.hosts, inventory.auto.yml и
+# known_hosts при этом приведутся в порядок автоматически.
 ```
 
 ## Multipass команды

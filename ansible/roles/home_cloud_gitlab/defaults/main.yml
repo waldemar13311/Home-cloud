@@ -18,7 +18,7 @@ home_cloud_gitlab_signup_enabled: true
 # Секреты
 home_cloud_gitlab_root_password: "SuperSecurePassword123"
 
-# Root Personal Access Token (ровно 20 символов — требование GitLab set_token)
+# Root Personal Access Token (ровно 20 символов - требование GitLab set_token)
 home_cloud_gitlab_root_pat: "HomeCloudGitlabPatToken-tqdhOsUCqPGr7rW"
 home_cloud_gitlab_root_pat_name: "Home Cloud Root PAT token"
 home_cloud_gitlab_root_pat_expires_days: 365

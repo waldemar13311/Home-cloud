@@ -2,7 +2,7 @@ resource "multipass_instance" "nodes" {
   for_each = local.vms
 
   name  = each.key
-  image = "24.04"
+  image = local.common_config.image
 
   cpus   = each.value.cpus
   memory = each.value.memory
@@ -16,9 +16,9 @@ resource "multipass_instance" "nodes" {
     dns_server = local.common_config.dns_server
   })
 
-  # Имя ВМ станет частью FQDN и попадёт в regex в provisioner-скриптах,
-  # поэтому оно обязано быть корректной DNS-меткой: иначе dnsmasq/inventory
-  # сломаются молча, уже после применения плана.
+  # Имя ВМ станет частью FQDN, поэтому оно обязано быть корректной
+  # DNS-меткой: иначе dnsmasq/inventory сломаются молча,
+  # уже после применения плана.
   lifecycle {
     precondition {
       condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", each.key))
@@ -26,83 +26,84 @@ resource "multipass_instance" "nodes" {
     }
   }
 
-  # Автоматическое добавление записей при создании
-  provisioner "local-exec" {
-    command = <<EOT
-      INVENTORY="${path.module}/../../ansible/inventory.yml"
-      LOCKDIR="/tmp/terraform-ansible-inventory.lock"
+  # Записи в known_hosts, dnsmasq.hosts и ansible-инвентаре при уничтожении
+  # пересоздаются сами - см. terraform_data.ssh_known_hosts_cleanup,
+  # local_file.dnsmasq_hosts и local_file.inventory ниже.
+}
 
-      # Генерируем строку алиасов для dnsmasq
-      # Получится: "argocd.k3s-node.home vault.k3s-node.home "
-      SUBDOMAINS="%{ for sub in lookup(each.value, "subdomains", []) }${sub}.${each.key}.${local.common_config.domain} %{ endfor }"
-
-      # --- dnsmasq ---
-      # Флаг -i.bak универсален: понимается и BSD sed (macOS), и GNU sed (Linux).
-      # Вариант -i '' из BSD на Linux сломается, а -i без суффикса — на macOS.
-      # Бэкап создаётся на обеих платформах, поэтому сразу удаляем его.
-      sed -i.bak "/ ${each.key}\.${local.common_config.domain}/d" /opt/homebrew/etc/dnsmasq.hosts
-      /bin/rm -f /opt/homebrew/etc/dnsmasq.hosts.bak
-      # Внимание: путь /opt/homebrew/etc и dnsmasq как сервис — мак-специфичные вещи,
-      # на Linux-хосте хосты и reload dnsmasq настраиваются иначе.
-
-      # Добавляем в файл: IP, FQDN, ShortName и дальше все субдомены в эту же строку
-      echo "${self.ipv4[0]} ${self.name}.${local.common_config.domain} ${self.name} $SUBDOMAINS" >> /opt/homebrew/etc/dnsmasq.hosts
-      sudo killall -HUP dnsmasq
-
-      # --- ansible inventory ---
-      while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
-
-      # УМНОЕ УДАЛЕНИЕ: Удаляем блок текущего хоста (4 пробела) и все его вложенные свойства (6+ пробелов)
-      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
-      sed -i.bak -e "/^    ${each.key}:/,/^    [a-zA-Z]/ { /^    ${each.key}:/d; /^      /d; }" "$INVENTORY"
-      /bin/rm -f "$INVENTORY.bak"
-
-      # Записываем базовые данные хоста
-      printf '    %s:\n      ansible_host: %s.%s\n' \
-        "${each.key}" "${each.key}" "${local.common_config.domain}" >> "$INVENTORY"
-
-      # Записываем субдомены, если они есть
-      %{ if length(lookup(each.value, "subdomains", [])) > 0 }
-      printf '      subdomains:\n' >> "$INVENTORY"
-      %{ for sub in lookup(each.value, "subdomains", []) }
-      printf '        - %s\n' "${sub}" >> "$INVENTORY"
-      %{ endfor }
-      %{ endif }
-
-      rmdir "$LOCKDIR"
-    EOT
+# Очистка known_hosts от имён, FQDN и IP уничтожаемых ВМ.
+# При пересоздании ВМ с новым IP старая запись чистится автоматически
+resource "terraform_data" "ssh_known_hosts_cleanup" {
+  for_each = {
+    for name, inst in multipass_instance.nodes :
+    name => "${name}::${name}.${local.common_config.domain}::${inst.ipv4[0]}"
   }
 
-  # Удаляем запись при уничтожении
   provisioner "local-exec" {
     when    = destroy
-    command = <<EOT
-      INVENTORY="${path.module}/../../ansible/inventory.yml"
-      LOCKDIR="/tmp/terraform-ansible-inventory.lock"
-
-      # 1. Берем главный FQDN (второе слово на строке)
-      FQDN=$(awk -v name="${self.name}" '$0 ~ " " name "\\." {print $2}' /opt/homebrew/etc/dnsmasq.hosts)
-
-      # 2. Удаляем строку целиком (субдомены удалятся вместе с ней, так как они на одной строке)
-      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
-      sed -i.bak "/ ${self.name}\./d" /opt/homebrew/etc/dnsmasq.hosts
-      /bin/rm -f /opt/homebrew/etc/dnsmasq.hosts.bak
-      sudo killall -HUP dnsmasq
-
-      # 3. Чистим SSH-ключи (добавил 2>/dev/null, чтобы скрипт не падал, если ключа нет)
-      ssh-keygen -R ${self.name} 2>/dev/null || true
-      [ -n "$FQDN" ] && ssh-keygen -R $FQDN 2>/dev/null || true
-      ssh-keygen -R ${self.ipv4[0]} 2>/dev/null || true
-
-      # 4. Удаляем хост и его дочерние элементы из Ansible inventory
-      while ! mkdir "$LOCKDIR" 2>/dev/null; do sleep 0.1; done
-
-      # То же умное удаление: убираем хост при destroy
-      # -i.bak — универсальный флаг для BSD и GNU sed (см. комментарий выше)
-      sed -i.bak -e "/^    ${self.name}:/,/^    [a-zA-Z]/ { /^    ${self.name}:/d; /^      /d; }" "$INVENTORY"
-      /bin/rm -f "$INVENTORY.bak"
-
-      rmdir "$LOCKDIR"
-    EOT
+    command = join(" ; ", [for h in split("::", each.key) : "ssh-keygen -R ${h} 2>/dev/null || true"])
   }
+}
+
+# dnsmasq.hosts генерируется целиком на каждом изменении состояния.
+# Внимание: путь /opt/homebrew/etc и dnsmasq как сервис - мак-специфичные.
+# На Linux-хосте хосты и reload dnsmasq настраиваются иначе.
+resource "local_file" "dnsmasq_hosts" {
+  filename        = "/opt/homebrew/etc/dnsmasq.hosts"
+  file_permission = "0644"
+
+  content = templatefile("${path.module}/templates/dnsmasq-hosts.tftpl", {
+    domain = local.common_config.domain
+    vms = {
+      for name, inst in multipass_instance.nodes : name => {
+        ip         = inst.ipv4[0]
+        subdomains = lookup(local.vms[name], "subdomains", [])
+      }
+    }
+  })
+}
+
+# Перезапуск dnsmasq нужен после любого изменения hosts-файла, поэтому
+# вешаем его на хэш контента: provisioner у local_file при обновлении
+# контента не вызывается, а terraform_data - пересоздаётся.
+resource "terraform_data" "dnsmasq_reload" {
+  triggers_replace = [local_file.dnsmasq_hosts.content_sha1]
+
+  provisioner "local-exec" {
+    # fail, а не continue по умолчанию: иначе при неудаче релоада apply
+    # пройдёт зелёным, а dnsmasq продолжит отдавать устаревшие записи
+    command    = <<EOT
+      if sudo killall -HUP dnsmasq; then
+        echo "dnsmasq успешно перечитал hosts-файл, DNS-записи обновлены"
+      else
+        echo "Не удалось перечитать конфиг dnsmasq (killall -HUP). Частые причины:" >&2
+        echo "  1. dnsmasq не запущен:       brew services list | grep dnsmasq" >&2
+        echo "  2. sudo запрашивает пароль:  нужен passwordless sudo для этого пользователя" >&2
+        echo "DNS-записи обновлены на диске, но dnsmasq продолжит отдавать старые," >&2
+        echo "пока не выполните 'sudo killall -HUP dnsmasq' вручную." >&2
+        exit 1
+      fi
+    EOT
+    on_failure = fail
+  }
+}
+
+# Ansible-инвентарь генерируется целиком на каждом изменении состояния.
+# ansible.cfg читает его вместе со статическим ansible/inventory.yml
+# (см. inventory = ... в ansible/ansible.cfg).
+resource "local_file" "inventory" {
+  filename        = "${path.module}/../../ansible/inventory.auto.yml"
+  file_permission = "0644"
+
+  content = yamlencode({
+    all = {
+      hosts = {
+        for name, inst in multipass_instance.nodes : name => merge(
+          { ansible_host = "${name}.${local.common_config.domain}" },
+          length(lookup(local.vms[name], "subdomains", [])) > 0 ?
+          { subdomains = lookup(local.vms[name], "subdomains", []) } : {}
+        )
+      }
+    }
+  })
 }

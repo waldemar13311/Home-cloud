@@ -8,6 +8,9 @@ variable "ssh_public_key_path" {
 locals {
   # То, что меняется
   vms = {
+    # "test-vm-1"           = { cpus = 2, memory = "4G", disk = "25G" }
+    # "test-vm-2"           = { cpus = 2, memory = "4G", disk = "25G" }
+
     # Для тестов VPN
     # "proxy"           = { cpus = 2, memory = "4G", disk = "25G" }
     # "proxy-worker-1"  = { cpus = 2, memory = "4G", disk = "25G" }
@@ -21,13 +24,13 @@ locals {
     #   disk        = "60G"
     #   subdomains  = ["registry"]
     # }
-    
+
     # "vault"     = {
     #   cpus        = 1,
     #   memory      = "1G",
     #   disk        = "20G"
     # }
-    
+
     # "k3s-node"  = {
     #   cpus        = 4,
     #   memory      = "6G",
@@ -42,6 +45,7 @@ locals {
 
   # Общие настройки
   common_config = {
+    image      = "24.04"
     domain     = "home"
     dns_server = "192.168.1.25"
   }
