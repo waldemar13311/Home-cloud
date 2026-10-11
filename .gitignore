@@ -1,8 +1,11 @@
-.vscode/*
+.vscode/
 
 **/.terraform/
 **/*.tfstate
 **/*.tfstate.*
+**/*.tfplan
+**/override.tf
+**/*_override.tf
 **/.terraform.tfstate.lock.info
 **/secrets.auto.tfvars
 crash.log
@@ -12,6 +15,12 @@ crash.*.log
 
 ansible/sudo_password_file
 
+**/.codegraph/
+**/.claude/
+
 .venv/*
 
 secrets/*
+
+# macOS
+.DS_Store
