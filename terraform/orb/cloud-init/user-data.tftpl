@@ -1,0 +1,77 @@
+#cloud-config
+manage_etc_hosts: false
+hostname: ${hostname}
+fqdn: ${hostname}.${domain}
+timezone: Europe/Moscow
+
+users:
+  - name: root
+    lock_passwd: false
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+  - name: ansible-user
+    gecos: Ansible User
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    lock_passwd: false
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+# Задаём пароль для пользователей
+chpasswd:
+  list: |
+    root:toor
+    ansible-user:ansible
+  expire: False
+
+# Пароль работает только через консоль (orb -m), не по SSH
+ssh_pwauth: False
+
+packages:
+  - openssh-server
+  - bash-completion
+
+write_files:
+  - path: /etc/hosts
+    owner: root:root
+    permissions: '0644'
+    content: |
+      127.0.0.1 localhost
+      127.0.1.1 ${hostname}.${domain} ${hostname}
+
+runcmd:
+  # Настройка русской локали
+  - locale-gen ru_RU.UTF-8
+  - update-locale LANG=ru_RU.UTF-8
+  # Отключение приветствия
+  - touch /root/.hushlogin
+  - su - ansible-user -c 'touch /home/ansible-user/.hushlogin'
+  # Настройки DNS
+  - sed -i 's/#DNS=/DNS=${dns_server}/' /etc/systemd/resolved.conf
+  - sed -i 's/#Domains=/Domains=${domain}/' /etc/systemd/resolved.conf
+  - systemctl restart systemd-resolved
+  # Отключаем ipv6 для ssh сервера
+  - sed -i 's/^#\?[[:space:]]*AddressFamily.*/AddressFamily inet/' /etc/ssh/sshd_config
+
+  # Обновляем конфигурацию systemd и перезапускаем ssh с ожиданием готовности
+  # systemctl daemon-reload гарантирует, что systemd обновил список сервисов после установки openssh-server
+  # systemctl restart ssh && break - гарантирует выход при успешном завершении systemctl restart ssh
+  - systemctl daemon-reload
+  - |
+    for i in {1..15}; do
+      systemctl restart ssh && break
+      sleep 2
+    done
+
+  # Отключаем ufw
+  - systemctl stop ufw.service || true
+  - systemctl disable ufw.service || true
+
+# ВАЖНО: в отличие от multipass, здесь НЕТ отключения IPv6 через bootcmd.
+# Проверено: OrbStack определяет IP машины через собственный guest-агент,
+# которому нужен IPv6 (link-local); sysctl disable_ipv6 в bootcmd ломает
+# детекцию - создание падает с "machine didn't start in 30s (missing IP
+# address)". Не переносить этот блок из multipass-шаблона.

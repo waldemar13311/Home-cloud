@@ -71,6 +71,14 @@ mv ~/.terraform.d/plugins/registry.opentofu.org/hashicorp/local/2.9.1/darwin_arm
 rm terraform-provider-local_2.9.1_darwin_arm64.zip
 
 
+# Настройка robertdebock/orbstack
+mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/robertdebock/orbstack/3.1.2/darwin_arm64/
+
+wget https://github.com/robertdebock/terraform-provider-orbstack/releases/download/v3.1.2/terraform-provider-orbstack_3.1.2_darwin_arm64.zip && \
+unzip terraform-provider-orbstack_3.1.2_darwin_arm64.zip -d ~/.terraform.d/plugins/registry.opentofu.org/robertdebock/orbstack/3.1.2/darwin_arm64 && \
+rm terraform-provider-orbstack_3.1.2_darwin_arm64.zip
+
+
 # Настройка opentofu/null
 mkdir -p ~/.terraform.d/plugins/registry.opentofu.org/opentofu/null/3.3.0/darwin_arm64/
 
@@ -90,6 +98,12 @@ cd terraform
 tofu -chdir=multipass init
 tofu -chdir=multipass plan
 tofu -chdir=multipass apply
+
+# Аналог на OrbStack (применяется поочерёдно с multipass:
+# они пишут общие dnsmasq.hosts и inventory.auto.yml)
+tofu -chdir=orb init
+tofu -chdir=orb plan
+tofu -chdir=orb apply
 
 # Удаление ВМ: убрать её из local.vms в terraform/multipass/variables.tf
 # и выполнить обычный apply. dnsmasq.hosts, inventory.auto.yml и
