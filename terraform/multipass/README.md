@@ -22,6 +22,11 @@
 - macOS-хост: путь `/opt/homebrew/etc/dnsmasq.hosts` и dnsmasq как brew-сервис - мак-специфичны; на Linux-хосте hosts-файл и reload dnsmasq настраиваются иначе.
 - dnsmasq подключает сгенерированный файл через `addn-hosts` (см. `/opt/homebrew/etc/dnsmasq.conf`).
 - passwordless sudo для `sudo killall -HUP dnsmasq` (иначе релоад упадёт - apply завершится ошибкой с подсказкой).
+- Чтобы сам Mac резолвил `*.home` (и переживал подключение корпоративного
+  VPN, подменяющего основной DNS), нужен scoped-резолвер:
+  `/etc/resolver/home` с `nameserver 127.0.0.1`. Проверка системного
+  резолвера - `dscacheutil -q host -a name <fqdn>` (dig/nslookup файл
+  `/etc/resolver` игнорируют).
 - Провайдер `hashicorp/local` установлен вручную (см. корневой README).
 
 ## Как добавить / удалить ВМ
